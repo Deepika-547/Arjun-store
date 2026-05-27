@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arjun Enterprises</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+<div class="announcement-bar">
+    <div class="scrolling-text">
+        <span>🎉 Free Delivery on orders above ₹499! </span>
+        <span>🥬 Fresh Vegetables delivered in 60 minutes! </span>
+        <span>🔥 Use Code: FIRST50 for 50% off on your first order! </span>
+        <span>🎉 Free Delivery on orders above ₹499! </span>
+        <span>🥬 Fresh Vegetables delivered in 60 minutes! </span>
+    </div>
+</div>
+<header>
+    <nav class="nav-container">
+        <h1 class="logo" onclick="renderCategories()">
+            Arjun <span class="logo-badge">SuperMarket</span>
+        </h1>
+
+        <div class="header-location-container">
+            <div class="vertical-divider"></div>
+            <div class="location-widget" onclick="handleLocationUpdate()" style="cursor:pointer;">
+                <div class="delivery-badge">
+                    <i class="fa-solid fa-bolt-lightning" style="color: #ff5200;"></i> 9 MINS DELIVERY TO
+                </div>
+                <div class="location-selector">
+                    <span id="nav-location-text">East Lakshmipuram</span>
+                    <i class="fa-solid fa-chevron-down dropdown-arrow" style="font-size:10px; margin-left:4px; color:#64748b;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-bar-group">
+                <input type="text" id="productSearch" placeholder="Search for products..." onkeyup="searchProducts()">
+                <button class="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="user-actions">
+    <!-- ❤️ Wishlist Button -->
+    <div class="action-item" id="wishlist-nav-btn" onclick="openWishlistPage()" title="My Wishlist" style="position:relative;cursor:pointer;">
+        <i class="fa-regular fa-heart action-icon"></i>
+        <span id="wishlist-nav-badge" style="display:none;position:absolute;top:-6px;right:-6px;
+            background:#ef4444;color:white;border-radius:50%;width:18px;height:18px;
+            font-size:10px;font-weight:800;align-items:center;justify-content:center;">0</span>
+    </div>
+
+    <!-- 🛒 Cart Button -->
+    <div class="action-item cart-box" onclick="toggleCart()">
+        <i class="fa-solid fa-cart-shopping action-icon"></i>
+        <span id="cart-count">0</span>
+    </div>
+            
+            <div class="action-item" id="profile-dropdown-trigger" onclick="toggleProfileMenu(event)">
+                <i class="fa-regular fa-user action-icon"></i>
+                <div id="profile-menu" class="dropdown-content">
+                    <div id="nav-guest-view">
+                        <a href="javascript:void(0)" onclick="openModal('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                        <a href="javascript:void(0)" onclick="openModal('register')"><i class="fa-solid fa-user-plus"></i> Register</a>
+                    </div>
+                    <div id="nav-user-view" style="display: none;">
+                        <a href="javascript:void(0)" onclick="openFullProfile()"><i class="fa-solid fa-circle-user"></i> My Account</a>
+                        <a href="javascript:void(0)" onclick="quickReorderLastOrder()" style="color:#ff5200;font-weight:700;"><i class="fa-solid fa-rotate-right"></i> Reorder Last</a>
+                    </div>
+                    <a href="javascript:void(0)" onclick="openCorporatePage()" class="corporate-link">
+                        <i class="fa-solid fa-building"></i> Arjun Corporate
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+<!-- CATEGORY NAVBAR -->
+<nav class="category-navbar">
+  <ul class="category-list">
+    <li class="category-item active" onclick="handleCategoryClick(this, 'all')">All</li>
+    
+    <li class="category-item dropdown">
+      <span onclick="handleCategoryClick(this, 'Snacks & Drinks')">Snacks & Drinks <i class="fas fa-chevron-down"></i></span>
+      <div class="dropdown-menu">
+        <a href="#" onclick="renderItems('Chips&Namkeens')">Chips & Namkeens</a>
+        <a href="#" onclick="renderItems('ColdDrinks&Juices')">Cold Drinks & Juices</a>
+        <a href="#" onclick="renderItems('chocolates')">Chocolates</a>
+        <a href="#" onclick="renderItems('Instant Foods')">Instant Foods</a>
+        <a href="#" onclick="renderItems('Biscuits')">biscuits</a>
+      </div>
+    </li>
+
+    <li class="category-item dropdown">
+      <span onclick="handleCategoryClick(this, 'Beauty & Wellness')">Beauty & Wellness <i class="fas fa-chevron-down"></i></span>
+      <div class="dropdown-menu">
+        <a href="#" onclick="renderItems('Skincare')">Skincare</a>
+        <a href="#" onclick="renderItems('Bath&Body')">Bath & Body</a>
+        <a href="#" onclick="renderItems('Haircare')">Haircare</a>
+        <a href="#" onclick="renderItems('Oralcare')">Oralcare</a>
+        <a href="#" onclick="renderItems('Babycare')">Babycare</a>
+        <a href="#" onclick="renderItems('Feminine Hygiene')">Feminine Hygiene</a>
+        <a href="#" onclick="renderItems('Makeup')">Makeup</a>
+      </div>
+    </li>
+     <li class="category-item dropdown">
+      <span onclick="handleCategoryClick(this, 'Home Essentials')">Home Essentials<i class="fas fa-chevron-down"></i></span>
+      <div class="dropdown-menu">
+        <a href="#" onclick="renderItems('Cleaning')">cleaning</a>
+        <a href="#" onclick="renderItems('Washing')">washing</a>
+        <a href="#" onclick="renderItems('Puja Essentials')">Puja Essentials</a>
+      </div>
+    </li>
+    <li class="category-item dropdown">
+      <span onclick="handleCategoryClick(this, 'Household Groceries')">Household Groceries<i class="fas fa-chevron-down"></i></span>
+      <div class="dropdown-menu">
+        <a href="#" onclick="renderItems('Vegetables')">vegetables</a>
+        <a href="#" onclick="renderItems('Spices')">Spices</a>
+        <a href="#" onclick="renderItems('Stationary')">Stationary</a>
+        <a href="#" onclick="renderItems('pulses')">pulses</a>
+        <a href="#" onclick="renderItems('Dairy')">Dairy</a>
+      </div>
+    </li>
+  </ul>
+</nav>
+<aside id="cart-sidebar" class="sidebar">
+    <div class="side-head">
+        <div class="side-head-title">
+            <h3>My Basket</h3>
+            <span id="side-cart-count" class="item-count-badge">0 Items</span>
+        </div>
+        <button class="close-sidebar" onclick="toggleCart()" aria-label="Close Basket">
+    <span class="close-icon">&times;</span>
+</button>
+
+    </div>
+
+    <div class="delivery-notice-container">
+    <p id="delivery-text">Add <b>₹499</b> for FREE delivery</p>
+    <div class="progress-container">
+        <div id="delivery-progress"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;">
+        <span style="font-size:10px;color:#94a3b8;">₹0</span>
+        <span id="milestone-delivery-label" style="font-size:10px;color:#10b981;font-weight:600;">📦 ₹499 Free Delivery</span>
+        <span id="milestone-discount-label" style="font-size:10px;color:#8b5cf6;font-weight:600;">🎁 ₹999 = 10% OFF</span>
+    </div>
+</div>
+
+    <div id="cart-items" class="cart-list">
+        </div>
+
+    <div id="empty-cart" class="empty-basket-view">
+        <div class="empty-icon">🛒</div>
+        <h4>Your basket is empty</h4>
+        <p>Looks like you haven't added anything yet.</p>
+        <button onclick="toggleCart()" class="shop-now-btn">Start Shopping</button>
+    </div>
+    <div class="side-foot">
+        <div class="bill-details">
+            <div class="bill-row">
+                <span>Subtotal</span>
+                <span id="subtotal-price">₹0</span>
+            </div>
+            <div class="bill-row delivery-row">
+                <span>Delivery Charges</span>
+                <span id="delivery-charge">₹40</span>
+            </div>
+            <hr>
+            <div class="total-row">
+                <span>Total Amount</span>
+                <span id="total-price">₹0</span>
+            </div>
+        </div>
+        <div id="delivery-options" class="delivery-slots-container" style="display: none;">
+    <h4>Select Delivery Slot</h4>
+    <div class="slots-grid">
+        <label class="slot-card">
+            <input type="radio" name="delivery-slot" value="Instant" checked>
+            <div class="slot-info">
+                <span class="slot-time">Instant</span>
+                <span class="slot-desc">Within 60 mins</span>
+            </div>
+        </label>
+        <label class="slot-card">
+            <input type="radio" name="delivery-slot" value="Morning">
+            <div class="slot-info">
+                <span class="slot-time">Morning</span>
+                <span class="slot-desc">8 AM - 12 PM</span>
+            </div>
+        </label>
+        <label class="slot-card">
+            <input type="radio" name="delivery-slot" value="Evening">
+            <div class="slot-info">
+                <span class="slot-time">Evening</span>
+                <span class="slot-desc">4 PM - 8 PM</span>
+            </div>
+        </label>
+    </div>
+</div>
+        <div class="foot-actions">
+            <button class="clear-btn" onclick="clearCart()">Clear All</button>
+            <button class="checkout-btn" onclick="checkout()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
+    Checkout Now
+</button>
+        </div>
+    </div>
+</aside>
+
+<main>
+  <section class="hero-slider">
+        <div class="slider-wrapper">
+            <div class="slide"><img src="banner3.jpg" alt="Banner 1"></div>
+            <div class="slide"><img src="banner4.jpg" alt="Banner 2"></div>
+            <div class="slide"><img src="banner5.jpg" alt="Banner 3"></div>
+        </div>
+    </section>
+    <style>
+/* ── Flash Sale Animations ───────────────────────────── */
+@keyframes fs-pulse   { 0%,100%{opacity:1;transform:scale(1);}  50%{opacity:.85;transform:scale(1.06);} }
+@keyframes fs-shimmer { 0%{background-position:200% center;} 100%{background-position:-200% center;} }
+@keyframes fs-float   { 0%,100%{transform:translateY(0);}        50%{transform:translateY(-6px);} }
+@keyframes fs-scanline{ 0%{top:-100%;} 100%{top:200%;} }
+@keyframes fs-pop     { 0%{transform:scale(.85);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+@keyframes fs-blink   { 0%,100%{opacity:1;} 50%{opacity:0;} }
+@keyframes fs-glow    { 0%,100%{box-shadow:0 0 20px rgba(255,82,0,.3);} 50%{box-shadow:0 0 40px rgba(255,82,0,.7);} }
+@keyframes fs-slide   { from{transform:translateX(-12px);opacity:0;} to{transform:translateX(0);opacity:1;} }
+
+/* ── Flash Sale Section ──────────────────────────────── */
+#flash-sale-section {
+    display: none;
+    background: linear-gradient(135deg, #0a0f1e 0%, #1a0a00 50%, #0a0f1e 100%);
+    background-size: 200% 200%;
+    animation: fs-shimmer 8s ease infinite;
+    padding: 0;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+}
+#flash-sale-section::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 80px,
+        rgba(255,82,0,0.03) 80px,
+        rgba(255,82,0,0.03) 81px
+    );
+    pointer-events:none;
+}
+
+/* ── Flash Sale Header Strip ─────────────────────────── */
+.fs-header-strip {
+    background: linear-gradient(90deg, #ff5200, #ff8c00, #ff5200);
+    background-size: 200% auto;
+    animation: fs-shimmer 3s linear infinite;
+    padding: 6px 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+/* ── Flash Sale Body ─────────────────────────────────── */
+.fs-body {
+    padding: 22px 0 28px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Flash Sale Title Row ────────────────────────────── */
+.fs-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.fs-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+}
+.fs-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ff5200, #ff3000);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    animation: fs-pulse 1.5s ease-in-out infinite, fs-glow 2s ease-in-out infinite;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+.fs-badge::after {
+    content:'';
+    position:absolute;
+    top:-100%; left:-60%;
+    width:40%; height:300%;
+    background:rgba(255,255,255,0.25);
+    transform:skewX(-20deg);
+    animation: fs-scanline 2.5s ease-in-out infinite;
+}
+.fs-bolt { font-size:16px; animation:fs-float 1.2s ease-in-out infinite; display:inline-block; }
+.fs-title { color:white; margin:0; font-size:22px; font-weight:900; letter-spacing:-0.5px; }
+.fs-sub   { color:#94a3b8; margin:4px 0 0; font-size:12px; animation:fs-slide .6s ease both; }
+
+/* ── Ends-In Timer Box ───────────────────────────────── */
+.fs-timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,82,0,0.35);
+    padding: 14px 22px;
+    border-radius: 16px;
+    min-width: 220px;
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+}
+.fs-timer-wrap::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(135deg,rgba(255,82,0,0.08),transparent);
+    pointer-events:none;
+}
+.fs-ends-label {
+    color: #ff8c42;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.fs-ends-dot {
+    width: 7px; height: 7px;
+    background: #ff5200;
+    border-radius: 50%;
+    animation: fs-pulse 1s ease-in-out infinite;
+    display: inline-block;
+}
+#global-flash-timer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fs-tbox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, #ff5200 0%, #cc2200 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 54px;
+    box-shadow: 0 4px 16px rgba(255,82,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative;
+    overflow: hidden;
+}
+.fs-tbox::after {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height:50%;
+    background:rgba(255,255,255,0.08);
+    border-radius:10px 10px 0 0;
+}
+.fs-tval {
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+}
+.fs-tlabel {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+    margin-top: 3px;
+}
+.fs-colon {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ff5200;
+    line-height: 1;
+    animation: fs-blink 1s step-end infinite;
+    margin-bottom: 8px;
+}
+
+/* ── Flash Sale Cards ────────────────────────────────── */
+.fs-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+    max-width: 960px;
+    margin: 0 auto;
+}
+.fs-card {
+    background: linear-gradient(145deg, #1e2a3a, #162030);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    animation: fs-pop 0.4s ease both;
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+.fs-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,82,0,0.4);
+    border-color: rgba(255,82,0,0.5);
+}
+.fs-card-img-wrap {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+}
+.fs-card-img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+.fs-card:hover .fs-card-img-wrap img { transform: scale(1.08); }
+.fs-card-img-wrap::after {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5));
+}
+.fs-disc-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 4px 10px;
+    border-radius: 20px;
+    z-index: 3;
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.5px;
+}
+.fs-card-body { padding: 14px 14px 0; }
+.fs-card-name {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fs-card-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+.fs-sale-price  { font-size: 20px; font-weight: 900; color: #ff5200; }
+.fs-orig-price  { font-size: 12px; color: #64748b; text-decoration: line-through; }
+.fs-green-badge {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(22,163,74,0.4);
+}
+.fs-valid-text {
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.fs-grab-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #ff5200, #ff3000);
+    color: white;
+    border: none;
+    padding: 11px;
+    border-radius: 0 0 16px 16px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    position: relative;
+    overflow: hidden;
+    margin: 0 -14px;
+    width: calc(100% + 28px);
+    margin-top: 4px;
+}
+.fs-grab-btn::before {
+    content:'';
+    position:absolute;
+    top:-100%; left:-60%;
+    width:40%; height:300%;
+    background:rgba(255,255,255,0.2);
+    transform:skewX(-20deg);
+    transition:left .4s;
+}
+.fs-grab-btn:hover { opacity:.9; transform:scale(1.01); }
+.fs-grab-btn:hover::before { left:160%; }
+.fs-grab-btn:active { transform:scale(.98); }
+</style>
+
+<!-- ⚡ FLASH SALE SECTION -->
+<div id="flash-sale-section">
+    <!-- Top shimmer strip -->
+    <div class="fs-header-strip">⚡ &nbsp; TODAY'S FLASH DEALS &nbsp; — &nbsp; LIMITED STOCK &nbsp; ⚡</div>
+
+    <div class="fs-body">
+        <div class="container">
+
+            <!-- Title row — centered -->
+            <div style="text-align:center; margin-bottom:24px;">
+                <div style="display:inline-flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap;">
+                    <div class="fs-badge">
+                        <span class="fs-bolt">⚡</span>
+                        FLASH SALE
+                    </div>
+                    <div>
+                        <h2 class="fs-title">Limited Time Offers</h2>
+                        <p class="fs-sub">🔥 Grab deals before they're gone!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product cards — centered -->
+            <div id="flash-sale-grid" class="fs-grid" style="justify-items:center;"></div>
+
+            <!-- spacing at bottom -->
+            <div style="margin-top:20px;"></div>
+
+        </div>
+    </div>
+</div>
+<div id="home-view">
+    <div class="container" style="margin-top: 25px;">
+        <h2 class="view-title">Snacks & Drinks</h2>
+        <div id="snack-grid" class="item-grid"></div>
+    </div>
+
+    <div class="container" style="margin-top: 40px;">
+        <h2 class="view-title">Beauty & Wellness</h2>
+        <div id="beauty-grid" class="item-grid"></div>
+    </div>
+    <div class="container" style="margin-top: 40px;">
+        <h2 class="view-title">Home Essentials</h2>
+        <div id="clean-grid" class="item-grid"></div>
+    </div>
+    <div class="container" style="margin-top: 40px;">
+        <h2 class="view-title">Household Groceries</h2>
+        <div id="household-grid" class="item-grid"></div>
+    </div>
+</div>
+
+<div id="item-view" style="display: none;">
+    <div class="container">
+        <div class="view-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-top: 20px;">
+            <button onclick="showHomeView()" class="back-btn" style="width: auto; margin: 0;">
+                Back to Categories
+            </button>
+            <h2 id="view-title" style="margin: 0; border: none; font-weight: 700;"></h2>
+        </div>
+        
+        <div id="display-grid" class="item-grid"></div>
+    </div>
+</div>
+<!-- Recently Viewed Products -->
+<div id="recently-viewed-section" style="display:none; margin-top:40px; padding-bottom:40px;">
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 class="view-title" style="margin:0;">🕐 Recently Viewed</h2>
+            <button onclick="clearRecentlyViewed()" 
+                style="background:none; border:1px solid #e2e8f0; padding:6px 14px; 
+                       border-radius:8px; cursor:pointer; font-size:12px; color:#94a3b8;">
+                Clear All
+            </button>
+        </div>
+        <div id="recently-viewed-grid" class="item-grid"></div>
+    </div>
+</div>
+</main>
+
+<div id="auth-modal" class="modal-overlay">
+    <div class="auth-card unique-design">
+        <button class="close-modal-red" onclick="closeModal()">×</button>
+        
+        <div class="modal-brand">
+            <h2 class="logo-small">Arjun <span>SuperMarket</span></h2>
+            <p id="auth-subtitle">Sign in to your account</p>
+        </div>
+
+        <div class="auth-tabs-unique">
+            <button id="tab-login" class="tab-link active" onclick="switchTab('login')">Sign In</button>
+            <button id="tab-register" class="tab-link" onclick="switchTab('register')">New Account</button>
+        </div>
+
+        <div id="auth-form-container">
+            <div id="auth-error" class="auth-error"></div>
+<div id="auth-success" class="auth-success"></div>
+
+            <div class="input-wrapper reg-only" style="display: none;">
+                <label>Full Name</label>
+                <input type="text" id="user-name" class="standard-input" placeholder="Enter your full name">
+            </div>
+
+            <div class="input-wrapper reg-only" style="display: none;">
+                <label>Email Address</label>
+                <input type="email" id="user-email" class="standard-input" placeholder="name@example.com">
+            </div>
+
+            <div class="input-wrapper">
+                <label>Mobile Number</label>
+                <div class="phone-input-field">
+                    <span class="country-code">+91</span>
+                    <input type="tel" id="user-mobile" placeholder="Enter 10 digit number" maxlength="10">
+                </div>
+            </div>
+
+            <button class="continue-btn" id="auth-submit-btn" onclick="handleAuth()">Continue</button>
+        </div>
+        
+        <p class="terms-text">By continuing, you agree to Arjun Enterprises Terms of Service.</p>
+    </div>
+</div>
+
+<footer style="background:#1e293b;color:#cbd5e1;font-family:'Segoe UI',sans-serif;padding:48px 40px 0;">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr;gap:40px;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,0.1);">
+
+    <!-- Brand -->
+    <div>
+      <h2 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:12px;">Arjun <span style="color:#ff5200;">SuperMarket</span></h2>
+      <p style="font-size:13px;color:#94a3b8;line-height:1.7;margin-bottom:20px;">Delivering fresh vegetables, spices, dairy and daily essentials right to your doorstep. Quality guaranteed, every single day.</p>
+      <div style="display:flex;gap:10px;margin-bottom:20px;">
+        <a href="#" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#94a3b8;text-decoration:none;"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#94a3b8;text-decoration:none;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#94a3b8;text-decoration:none;"><i class="fab fa-x-twitter"></i></a>
+        <a href="#" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#94a3b8;text-decoration:none;"><i class="fab fa-youtube"></i></a>
+        <a href="https://wa.me/9494126465" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;color:#94a3b8;text-decoration:none;"><i class="fab fa-whatsapp"></i></a>
+      </div>
+      <p style="font-size:10px;color:#64748b;margin-bottom:10px;letter-spacing:0.8px;">DOWNLOAD OUR APP — COMING SOON</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;cursor:pointer;">
+          <i class="fab fa-google-play" style="font-size:22px;color:#94a3b8;"></i>
+          <div><div style="font-size:9px;color:#94a3b8;">GET IT ON</div><div style="font-size:13px;font-weight:600;color:#fff;">Google Play</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;cursor:pointer;">
+          <i class="fab fa-apple" style="font-size:22px;color:#94a3b8;"></i>
+          <div><div style="font-size:9px;color:#94a3b8;">DOWNLOAD ON THE</div><div style="font-size:13px;font-weight:600;color:#fff;">App Store</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div>
+      <h4 style="font-size:12px;font-weight:600;color:#fff;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.8px;">Quick Links</h4>
+      <ul style="list-style:none;padding:0;margin:0;">
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" onclick="renderCategories()" style="font-size:13px;color:#94a3b8;text-decoration:none;">Home</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" style="font-size:13px;color:#94a3b8;text-decoration:none;">About Us</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" style="font-size:13px;color:#94a3b8;text-decoration:none;">Track Order</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" style="font-size:13px;color:#94a3b8;text-decoration:none;">Offers & Coupons</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" style="font-size:13px;color:#94a3b8;text-decoration:none;">FAQs</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" onclick="openCorporatePage()" style="font-size:13px;color:#94a3b8;text-decoration:none;">Arjun Corporate</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" style="font-size:13px;color:#94a3b8;text-decoration:none;">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <!-- Shop By -->
+    <div>
+      <h4 style="font-size:12px;font-weight:600;color:#fff;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.8px;">Shop By</h4>
+      <ul style="list-style:none;padding:0;margin:0;">
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"></i><a href="#" onclick="syncAndRender('Vegetables')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Vegetables</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"></i><a href="#" onclick="syncAndRender('Spices')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Spices & Grains</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"></i><a href="#" onclick="syncAndRender('Dairy')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Dairy Products</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"></i><a href="#" onclick="renderItems('Chips&Namkeens')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Snacks & Drinks</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"></i><a href="#" onclick="renderItems('Skincare')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Beauty & Wellness</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" onclick="renderItems('Cleaning')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Home Essentials</a></li>
+        <li style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><a href="#" onclick="syncAndRender('Stationary')" style="font-size:13px;color:#94a3b8;text-decoration:none;">Stationery</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact -->
+    <div>
+      <h4 style="font-size:12px;font-weight:600;color:#fff;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.8px;">Contact Us</h4>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,82,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-location-dot" style="color:#ff5200;font-size:14px;"></i></div>
+        <span style="font-size:13px;color:#94a3b8;line-height:1.5;padding-top:6px;">Vinayaka Temple Street,<br>EL Puram, Visakhapatnam</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,82,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-phone" style="color:#ff5200;font-size:14px;"></i></div>
+        <span style="font-size:13px;color:#94a3b8;">+91 9494126565</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,82,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-envelope" style="color:#ff5200;font-size:14px;"></i></div>
+        <span style="font-size:13px;color:#94a3b8;">deepikathota054@gmail.com</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,82,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-clock" style="color:#ff5200;font-size:14px;"></i></div>
+        <span style="font-size:13px;color:#94a3b8;">Mon–Sun: 7:00 AM – 10:00 PM</span>
+      </div>
+      <a href="javascript:void(0)" onclick="openFullProfile(); setTimeout(()=>renderProfileTab('help'),100);" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border-radius:8px;padding:12px;font-size:13px;font-weight:600;text-decoration:none;">
+        <i class="fas fa-headset" style="font-size:16px;"></i> Contact Us
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Delivery Area Notice -->
+  <div style="text-align:center;padding:10px 0;border-top:1px solid rgba(255,255,255,0.06);">
+    <span style="font-size:12px;color:#94a3b8;display:inline-flex;align-items:center;gap:6px;">
+      <i class="fas fa-map-marker-alt" style="color:#ff5200;"></i>
+      Currently delivering only in <strong style="color:#ff5200;">&nbsp;East Lakshmipuram, Yeleswaram</strong>&nbsp;— Kakinada District, AP
+    </span>
+  </div>
+  <!-- Bottom Bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 0;flex-wrap:wrap;gap:12px;">
+    <p style="font-size:12px;color:#475569;margin:0;display:flex;align-items:center;gap:6px;">
+      <i class="fas fa-copyright" style="color:#ff5200;"></i> 2026 Arjun Enterprises. All rights reserved. Made with <i class="fas fa-heart" style="color:#ff5200;"></i> in East Lakshmipuram.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:#334155;font-weight:600;letter-spacing:0.5px;">WE ACCEPT</span>
+      <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 12px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px;"><i class="fas fa-money-bill-wave"></i> Cash on Delivery</span>
+      <span style="background:rgba(255,82,0,0.15);border:1px solid rgba(255,82,0,0.3);border-radius:6px;padding:5px 12px;font-size:11px;color:#ff5200;display:flex;align-items:center;gap:6px;"><i class="fas fa-bolt"></i> 9 Min Delivery</span>
+    </div>
+  </div>
+</footer>
+<script src="script.js?v=2" defer></script>
+<div id="full-profile-page" class="full-screen-overlay">
+    <div class="account-content-wrapper">
+        <div class="account-header">
+            <button class="close-overlay-btn" onclick="closeFullProfile()">←</button>
+            <h3 style="margin:0">My Account</h3>
+        </div>
+        <div id="profile-details" class="account-form-group">
+            </div>
+    </div>
+</div>
+<div id="edit-profile-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Update Profile</h3>
+            <span onclick="closeEditModal()" style="cursor:pointer; font-size:24px; color:#666;">&times;</span>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">Full Name</label>
+            <input type="text" id="edit-name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">Phone Number</label>
+            <input type="text" id="edit-phone" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px;">
+        </div>
+
+        <button onclick="saveProfileChanges()" style="width:100%; background:#ff5200; color:white; border:none; padding:14px; border-radius:8px; font-weight:bold; cursor:pointer;">
+            SAVE CHANGES
+        </button>
+    </div>
+</div>
+
+<!-- LOCATION MODAL -->
+<div id="location-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center;">
+    <div class="modal-card" style="background:white; border-radius:16px; padding:30px; width:90%; max-width:440px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 40px rgba(0,0,0,0.2); position:relative;">
+        <button onclick="closeLocationModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:22px; cursor:pointer; color:#64748b;">✕</button>
+
+        <h2 style="margin:0 0 6px 0; font-size:20px; color:#1e293b;">Select Delivery Address</h2>
+        <p style="margin:0 0 20px 0; font-size:13px; color:#64748b;">Choose where you'd like your order delivered</p>
+
+        <div style="position:relative; margin-bottom:14px;">
+            <input type="text" id="manual-location-input" placeholder="Search for area or address..."
+                style="width:100%; padding:12px 40px 12px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; box-sizing:border-box;"
+                onfocus="this.style.borderColor='#ff5200'" onblur="this.style.borderColor='#e2e8f0'">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+        </div>
+
+        <button onclick="getUserGPSLocation()"
+            style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:#fff7f2; border:1.5px solid #ff5200; color:#ff5200; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:20px; font-size:14px;">
+            <i class="fa-solid fa-location-crosshairs"></i> Use my current location
+        </button>
+
+        <div style="border-top:1px solid #f1f5f9; padding-top:16px;">
+            <h3 style="font-size:13px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.6px; margin:0 0 12px 0;">Saved Addresses</h3>
+            <div id="address-list-modal">
+                <p style="font-size:13px; color:#94a3b8; text-align:center; padding:10px 0;">No saved addresses yet.</p>
+            </div>
+        </div>
+
+        <button onclick="openAddNewAddressFromModal()"
+            style="margin-top:16px; width:100%; background:white; border:1.5px dashed #cbd5e1; padding:14px; border-radius:10px; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:600;">
+            <i class="fa-solid fa-plus"></i> Add New Address
+        </button>
+    </div>
+</div>
+
+</html>
