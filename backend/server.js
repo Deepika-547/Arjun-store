@@ -190,13 +190,27 @@ const nodemailer = require('nodemailer');
 
 // ─── Email Transporter ────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 30000
+});
+transporter.verify(function (error, success) {
+    if (error) {
+        console.log("SMTP VERIFY ERROR:", error);
+    } else {
+        console.log("SMTP SERVER READY");
     }
 });
-
 // ─── Admin Order Notification ────────────────────────────────────────────────
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
