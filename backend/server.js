@@ -186,7 +186,6 @@ function isAdmin(req, res, next) {
     }
     next();
 }
-const nodemailer = require('nodemailer');
 
 // ─── Email Transporter ────────────────────────────────────────────────────────
 const nodemailer = require("nodemailer");
