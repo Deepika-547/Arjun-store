@@ -266,7 +266,7 @@ window.onload = async () => {
 
     // ── Fetch stock map FIRST so cards render correctly on first paint ──────────
     try {
-        const r = await fetch('http://localhost:5000/products/stock');
+        const r = await fetch('https://arjun-store.onrender.com/products/stock');
         const { stockMap } = await r.json();
         if (stockMap) window._stockMap = stockMap;
     } catch (e) {
@@ -343,7 +343,7 @@ async function handleAuth() {
 
             try {
 
-                const res = await fetch("http://localhost:5000/send-register-otp", {
+                const res = await fetch("https://arjun-store.onrender.com/send-register-otp", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -395,7 +395,7 @@ async function handleAuth() {
 
         try {
 
-            const res = await fetch("http://localhost:5000/verify-register-otp", {
+            const res = await fetch("https://arjun-store.onrender.com/verify-register-otp", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -453,7 +453,7 @@ async function handleAuth() {
 
         try {
 
-            const res = await fetch("http://localhost:5000/send-otp", {
+            const res = await fetch("https://arjun-store.onrender.com/send-otp", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -518,7 +518,7 @@ async function handleAuth() {
 
     try {
 
-        const res = await fetch("http://localhost:5000/verify-otp", {
+        const res = await fetch("https://arjun-store.onrender.com/verify-otp", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -690,7 +690,7 @@ async function resendOTP(phone, step) {
     const name       = document.getElementById('user-name')?.value.trim() || '';
     const email      = document.getElementById('user-email')?.value.trim() || '';
 
-    const url      = step === 'verify-reg' ? "http://localhost:5000/send-register-otp" : "http://localhost:5000/send-otp";
+    const url      = step === 'verify-reg' ? "https://arjun-store.onrender.com/send-register-otp" : "https://arjun-store.onrender.com/send-otp";
     const bodyData = step === 'verify-reg' ? { name, email, phone } : { phone };
 
     try {
@@ -732,7 +732,7 @@ function confirmOrder() {
     const pointsToRedeem = window.pointsToRedeem || 0;
     const pointsEarned   = Math.floor(total / 100) * 10;
 
-    fetch("http://localhost:5000/place-order", {
+    fetch("https://arjun-store.onrender.com/place-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -747,7 +747,7 @@ function confirmOrder() {
             const orderId = data.orderId;
 
             if (pointsToRedeem > 0) {
-                fetch('http://localhost:5000/loyalty/redeem/apply', {
+                fetch('https://arjun-store.onrender.com/loyalty/redeem/apply', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone: user.phone, pointsToRedeem, orderId })
                 }).catch(err => console.error('Points deduction error:', err));
@@ -817,7 +817,7 @@ async function renderItems(category) {
     // Always ensure stockMap is fresh before rendering
     if (!window._stockMap) {
         try {
-            const r = await fetch('http://localhost:5000/products/stock');
+            const r = await fetch('https://arjun-store.onrender.com/products/stock');
             const { stockMap } = await r.json();
             window._stockMap = stockMap || {};
         } catch(e) {
@@ -887,7 +887,7 @@ return `
                 const safeId  = item.name.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
                 const ratingEl = document.getElementById(`rating-${safeId}`);
                 if (!ratingEl) return;
-                fetch(`http://localhost:5000/reviews/${encodeURIComponent(item.name)}`)
+                fetch(`https://arjun-store.onrender.com/reviews/${encodeURIComponent(item.name)}`)
                     .then(r => r.json())
                     .then(data => {
                         if (!ratingEl) return;
@@ -903,7 +903,7 @@ return `
         }
     }
     // ✅ Step 3: Fetch stock status from DB and patch buttons for out-of-stock items
-    fetch('http://localhost:5000/products/stock')
+    fetch('https://arjun-store.onrender.com/products/stock')
         .then(r => r.json())
         .then(({ stockMap }) => {
             if (!stockMap) return;
@@ -1024,7 +1024,7 @@ async function submitReview(productName) {
     }
 
     try {
-        const res  = await fetch('http://localhost:5000/review', {
+        const res  = await fetch('https://arjun-store.onrender.com/review', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1050,7 +1050,7 @@ async function submitReview(productName) {
 }
 
 function loadReviews(productName) {
-    fetch(`http://localhost:5000/reviews/${encodeURIComponent(productName)}`)
+    fetch(`https://arjun-store.onrender.com/reviews/${encodeURIComponent(productName)}`)
         .then(r => r.json())
         .then(data => {
             const container = document.getElementById('reviews-list');
@@ -1099,7 +1099,7 @@ function loadReviews(productName) {
 }
 // ✅ Check if user has ordered this product
 if (user) {
-    fetch(`http://localhost:5000/my-orders/${user.phone}`)
+    fetch(`https://arjun-store.onrender.com/my-orders/${user.phone}`)
         .then(r => r.json())
         .then(data => {
             const hasOrdered = data.orders?.some(order =>
@@ -1321,7 +1321,7 @@ async function validateSession() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.phone) return;
     try {
-        const res  = await fetch("http://localhost:5000/verify-user/" + user.phone);
+        const res  = await fetch("https://arjun-store.onrender.com/verify-user/" + user.phone);
         const data = await res.json();
         if (!data.valid) { localStorage.clear(); location.reload(); }
     } catch (e) {}
@@ -1502,7 +1502,7 @@ function validateAndConfirm() {
 }
 // ─── LOYALTY: Checkout helpers ────────────────────────────────────────────────
 function loadLoyaltyForCheckout(phone) {
-    fetch(`http://localhost:5000/loyalty/${phone}`)
+    fetch(`https://arjun-store.onrender.com/loyalty/${phone}`)
         .then(r => r.json())
         .then(data => {
             const pts      = data.points || 0;
@@ -1537,7 +1537,7 @@ function applyLoyaltyPoints() {
         if (msg) { msg.style.color = '#ef4444'; msg.innerText = 'Minimum 100 points required.'; }
         return;
     }
-    fetch('http://localhost:5000/loyalty/redeem/validate', {
+    fetch('https://arjun-store.onrender.com/loyalty/redeem/validate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: user.phone, pointsToRedeem: pts })
     })
@@ -1656,7 +1656,7 @@ async function applyCheckoutPromo() {
         }
         // Check if this is truly the user's first order
         try {
-            const res = await fetch(`http://localhost:5000/my-orders/${user.phone}`);
+            const res = await fetch(`https://arjun-store.onrender.com/my-orders/${user.phone}`);
             const data = await res.json();
             const pastOrders = (data.orders || []).filter(o => o.status !== 'Cancelled');
             if (pastOrders.length > 0) {
@@ -1851,7 +1851,7 @@ function renderProfileTab(tabName) {
         break;
     }
 
-    fetch(`http://localhost:5000/my-orders/${orderUser.phone}`)
+    fetch(`https://arjun-store.onrender.com/my-orders/${orderUser.phone}`)
         .then(res => res.json())
         .then(data => {
             if (!data.success || data.orders.length === 0) {
@@ -1934,7 +1934,7 @@ case 'loyalty': {
         <p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">Every ₹100 spent = 10 points. Redeem at checkout.</p>
         <div id="loyalty-tab-content"><p style="color:#64748b;text-align:center;padding:30px;">Loading...</p></div>`;
 
-    fetch(`http://localhost:5000/loyalty/${loyUser.phone}`)
+    fetch(`https://arjun-store.onrender.com/loyalty/${loyUser.phone}`)
         .then(r => r.json())
         .then(data => {
             const pts     = data.points      || 0;
@@ -2036,7 +2036,7 @@ case 'loyalty': {
             const addrUser = JSON.parse(localStorage.getItem("user"));
             if (!addrUser) break;
 
-            fetch(`http://localhost:5000/my-addresses/${addrUser.phone}`)
+            fetch(`https://arjun-store.onrender.com/my-addresses/${addrUser.phone}`)
                 .then(res => res.json())
                 .then(data => {
                     localStorage.setItem("allSavedAddresses", JSON.stringify(data.addresses || []));
@@ -2249,7 +2249,7 @@ case 'loyalty': {
                 </div>`;
 
             // ⚡ Load live flash deals into the offers tab
-            fetch('http://localhost:5000/flash-sales')
+            fetch('https://arjun-store.onrender.com/flash-sales')
                 .then(r => r.json())
                 .then(data => {
                     const block = document.getElementById('offers-flash-block');
@@ -2304,8 +2304,8 @@ case 'loyalty': {
             const refUser = JSON.parse(localStorage.getItem('user'));
             if (!refUser) break;
             Promise.all([
-                fetch(`http://localhost:5000/referral/${refUser.phone}`).then(r => r.json()),
-                fetch(`http://localhost:5000/wallet/${refUser.phone}`).then(r => r.json())
+                fetch(`https://arjun-store.onrender.com/referral/${refUser.phone}`).then(r => r.json()),
+                fetch(`https://arjun-store.onrender.com/wallet/${refUser.phone}`).then(r => r.json())
             ]).then(([refData, walData]) => {
                 const code     = refData.success ? refData.code         : '—';
                 const uses     = refData.success ? refData.totalUses    : 0;
@@ -2539,7 +2539,7 @@ async function submitHelpForm() {
     statusEl.style.display = 'none';
 
     try {
-        const res  = await fetch('http://localhost:5000/contact-support', {
+        const res  = await fetch('https://arjun-store.onrender.com/contact-support', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, phone, email, subject, message, category })
@@ -2602,7 +2602,7 @@ function saveNewAddress() {
     const fullAddress = `${house}, ${road}, ${city}, ${state} - ${pin}`;
 
     // ✅ Save to MongoDB
-    fetch("http://localhost:5000/save-address", {
+    fetch("https://arjun-store.onrender.com/save-address", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: user.phone, name, contactPhone, fullAddress })
@@ -2632,7 +2632,7 @@ function saveNewAddress() {
 function deleteAddress(id) {
     if (!confirm("Delete this address?")) return;
 
-    fetch(`http://localhost:5000/delete-address/${id}`, { method: "DELETE" })
+    fetch(`https://arjun-store.onrender.com/delete-address/${id}`, { method: "DELETE" })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -2895,7 +2895,7 @@ function closeTrackingModal() {
 }
 
 function fetchAndRenderTracking(orderId) {
-    fetch(`http://localhost:5000/order-status/${orderId}`)
+    fetch(`https://arjun-store.onrender.com/order-status/${orderId}`)
         .then(r => r.json())
         .then(data => {
             if (!data.success) throw new Error(data.message);
@@ -3020,7 +3020,7 @@ function renderTrackingUI(order) {
 function cancelOrderFromTracking(orderId) {
     if (!confirm('Are you sure you want to cancel this order?')) return;
     const user = JSON.parse(localStorage.getItem("user"));
-    fetch(`http://localhost:5000/cancel-order/${orderId}`, {
+    fetch(`https://arjun-store.onrender.com/cancel-order/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: user.phone })
@@ -3060,7 +3060,7 @@ function renderProfileTabWithTracking(tabName) {
         return;
     }
 
-    fetch(`http://localhost:5000/my-orders/${orderUser.phone}`)
+    fetch(`https://arjun-store.onrender.com/my-orders/${orderUser.phone}`)
         .then(res => res.json())
         .then(data => {
             if (!data.success || data.orders.length === 0) {
@@ -3761,7 +3761,7 @@ window.handleAuth = async function() {
     btn.innerText = "Please wait..."; btn.disabled = true;
 
     try {
-        const res  = await fetch("http://localhost:5000/register", {
+        const res  = await fetch("https://arjun-store.onrender.com/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, phone, referralCode: ref || undefined })
@@ -3806,7 +3806,7 @@ async function injectWalletAtCheckout() {
 
     let balance = 0;
     try {
-        const res  = await fetch(`http://localhost:5000/wallet/${user.phone}`);
+        const res  = await fetch(`https://arjun-store.onrender.com/wallet/${user.phone}`);
         const data = await res.json();
         balance = data.balance || 0;
     } catch (e) { return; }
@@ -3845,7 +3845,7 @@ const _origConfirmOrder = window.confirmOrder;
 window.confirmOrder = function() {
     if (window.walletDiscount > 0) {
         const user = JSON.parse(localStorage.getItem('user'));
-        fetch("http://localhost:5000/wallet/redeem", {
+        fetch("https://arjun-store.onrender.com/wallet/redeem", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phone: user.phone, amount: window.walletDiscount })
@@ -3904,7 +3904,7 @@ let flashSaleTimers = [];
 let globalTimerInterval = null;
 
 function loadFlashSales() {
-    fetch('http://localhost:5000/flash-sales')
+    fetch('https://arjun-store.onrender.com/flash-sales')
         .then(r => r.json())
         .then(data => {
             const sales   = data.sales || [];
@@ -4166,7 +4166,7 @@ function quickReorderLastOrder() {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) { openModal('login'); return; }
 
-    fetch('http://localhost:5000/my-orders/' + user.phone)
+    fetch('https://arjun-store.onrender.com/my-orders/' + user.phone)
         .then(res => res.json())
         .then(data => {
             if (!data.success || !data.orders || data.orders.length === 0) {
@@ -4273,7 +4273,7 @@ async function submitNotifyMe(productName, phone) {
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
 
     try {
-        const res = await fetch('http://localhost:5000/notify-me', {
+        const res = await fetch('https://arjun-store.onrender.com/notify-me', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ productName, email, phone })
@@ -4388,7 +4388,7 @@ function renderSavedAddressesInModal() {
     const selectedAddr = localStorage.getItem("selectedAddress") || "";
 
     if (userData && userData.phone) {
-        fetch(`http://localhost:5000/my-addresses/${userData.phone}`)
+        fetch(`https://arjun-store.onrender.com/my-addresses/${userData.phone}`)
             .then(r => r.json())
             .then(data => {
                 const addresses = data.addresses || [];

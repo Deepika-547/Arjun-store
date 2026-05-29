@@ -713,7 +713,7 @@
 
 </div>
 <script>
-const API     = 'http://localhost:5000';
+const API     = 'https://arjun-store.onrender.com';
 let ADMIN_KEY = '';
 let allOrders   = [];
 let allUsers    = [];
@@ -1437,7 +1437,7 @@ document.addEventListener('keypress', e => {
 });
 function updateOrderStatus(orderId, newStatus) {
     const adminKey = sessionStorage.getItem('adminKey') || 'arjun-admin-2026';
-    fetch(`http://localhost:5000/admin/order/${orderId}/status`, {
+    fetch(`https://arjun-store.onrender.com/admin/order/${orderId}/status`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

@@ -1273,7 +1273,7 @@ function sendWelcomeEmail(name, email) {
                 </ul>
 
                 <div style="text-align:center;margin:30px 0;">
-                    <a href="http://localhost:5000"
+                    <a href="https://arjun-store.onrender.com"
                        style="background:#ff5200;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
                         Start Shopping Now
                     </a>
@@ -1339,7 +1339,7 @@ function sendBackInStockEmail(email, productName, price, img) {
                 <p style="color:#64748b;font-size:13px;margin:16px 0 24px;">
                     Hurry — popular items sell out fast! Order now before it's gone again.
                 </p>
-                <a href="http://localhost:5000" style="display:inline-block;background:#ff5200;color:#fff;padding:14px 32px;border-radius:10px;font-weight:800;font-size:15px;text-decoration:none;">
+                <a href="https://arjun-store.onrender.com" style="display:inline-block;background:#ff5200;color:#fff;padding:14px 32px;border-radius:10px;font-weight:800;font-size:15px;text-decoration:none;">
                     Shop Now →
                 </a>
             </div>
