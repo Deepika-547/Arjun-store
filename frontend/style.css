@@ -2500,32 +2500,7 @@ button i {
    TARGETED FIXES — Footer & Profile Dropdown (Mobile)
    ============================================================ */
 
-/* ── Profile Dropdown — Fix off-screen overflow on mobile ── */
-@media (max-width: 768px) {
-    #profile-dropdown-trigger {
-        position: relative;
-    }
-    #profile-menu.dropdown-content {
-        right: 0;
-        left: auto;
-        min-width: 180px;
-        max-width: 90vw;
-        /* Ensure it never goes off the right edge */
-        transform: translateX(0);
-        margin-top: 8px;
-        border-radius: 12px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-        z-index: 9999;
-    }
-    #profile-menu.dropdown-content a {
-        padding: 14px 18px;
-        font-size: 15px;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    #profile-menu.dropdown-content a:last-child {
-        border-bottom: none;
-    }
-}
+
 
 /* ── Footer — Responsive Grid Layout ── */
 
@@ -2566,7 +2541,6 @@ button i {
     .footer-main-grid > div:first-child p {
         font-size: 12px !important;
     }
-    /* Quick links, Shop by, Contact in 2-col sub-grid */
     .footer-social-row {
         gap: 8px !important;
     }
@@ -2609,5 +2583,38 @@ button i {
     /* Brand column spans full width */
     .footer-main-grid > div:first-child {
         grid-column: 1 / -1;
+    }
+}
+
+/* ── Profile Dropdown — Overlay (never pushes content, works on all screens) ── */
+#profile-menu.dropdown-content {
+    position: fixed !important;   /* OUT of document flow — never shifts content */
+    top: 90px;                    /* just below desktop navbar */
+    right: 40px;
+    left: auto;
+    min-width: 200px;
+    z-index: 99999;
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    #profile-menu.dropdown-content {
+        top: 108px;               /* below the taller 2-row mobile navbar */
+        right: 10px;
+        min-width: 210px;
+        max-width: calc(100vw - 20px);
+        border-radius: 14px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    #profile-menu.dropdown-content a {
+        padding: 15px 18px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    #profile-menu.dropdown-content a:last-child {
+        border-bottom: none;
     }
 }
