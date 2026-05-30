@@ -194,18 +194,13 @@ const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "smtp-relay.brevo.com",
     port: 587,
     secure: false,
-    family: 4,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    connectionTimeout: 20000
+        user: "acfe80001@smtp-brevo.com",
+        pass: "xUEPwdZX9kyHMVgq"
+    }
 });
 transporter.verify(function (error, success) {
     if (error) {
