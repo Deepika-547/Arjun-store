@@ -2075,43 +2075,51 @@ button i {
 @media (max-width: 768px) {
     .nav-container {
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        /* Logo fixed | Search flexible | Icons fixed 90px */
+        grid-template-columns: auto minmax(0, 1fr) 90px;
         grid-template-rows: auto auto;
         padding: 10px 4%;
-        gap: 6px 10px;
+        gap: 6px 8px;
         height: auto;
         align-items: center;
     }
 
     /* Row 1: Logo | Search | Icons */
     .logo {
-        font-size: 20px;
+        font-size: 19px;
         grid-column: 1;
         grid-row: 1;
         white-space: nowrap;
     }
-    .logo-badge { font-size: 14px; padding: 2px 8px; }
+    .logo-badge { font-size: 13px; padding: 2px 7px; }
 
     .search-section {
         grid-column: 2;
         grid-row: 1;
+        min-width: 0;      /* allows it to shrink properly */
         max-width: 100%;
         margin: 0;
-        flex-grow: 1;
+    }
+    .search-bar-group {
+        width: 100%;
     }
     .search-bar-group input {
         padding: 8px 10px;
         font-size: 14px;
+        min-width: 0;
+        width: 100%;
     }
-    .search-btn { padding: 0 12px; }
+    .search-btn { padding: 0 10px; flex-shrink: 0; }
 
     .user-actions {
         grid-column: 3;
         grid-row: 1;
-        gap: 12px;
+        gap: 10px;
         justify-content: flex-end;
+        flex-wrap: nowrap;
+        overflow: visible;
     }
-    .action-icon { font-size: 20px; }
+    .action-icon { font-size: 19px; }
     .user-actions .action-label { display: none; }
 
     /* Row 2: Location bar full width */
@@ -2122,11 +2130,11 @@ button i {
         align-items: center;
         background: #f8f9fa;
         border-radius: 8px;
-        padding: 6px 10px;
+        padding: 5px 10px;
         border: 1px solid #e2e8f0;
     }
     .vertical-divider {
-        display: none; /* hide the divider on mobile */
+        display: none;
     }
     .delivery-badge {
         font-size: 11px;
@@ -2143,13 +2151,17 @@ button i {
 }
 
 @media (max-width: 480px) {
-    .nav-container { padding: 8px 3%; gap: 4px 8px; }
-    .logo { font-size: 17px; }
-    .logo-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; }
+    .nav-container {
+        grid-template-columns: auto minmax(0, 1fr) 80px;
+        padding: 8px 3%;
+        gap: 5px 6px;
+    }
+    .logo { font-size: 16px; }
+    .logo-badge { font-size: 11px; padding: 2px 5px; border-radius: 4px; }
     .search-bar-group input { padding: 7px 8px; font-size: 13px; }
-    .search-btn { padding: 0 10px; }
-    .user-actions { gap: 10px; }
-    .action-icon { font-size: 18px; }
+    .search-btn { padding: 0 8px; font-size: 12px; }
+    .user-actions { gap: 8px; }
+    .action-icon { font-size: 17px; }
     .delivery-badge { font-size: 10px; }
     #nav-location-text { font-size: 11px; }
 }
@@ -2614,7 +2626,6 @@ button i {
         grid-column: 1 / -1;
     }
 }
-
 
 /* ── Profile Dropdown — Overlay (never pushes content, works on all screens) ── */
 #profile-menu.dropdown-content {
