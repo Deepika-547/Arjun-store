@@ -197,6 +197,7 @@ const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
     secure: false,
+    family: 4,        // ← Force IPv4
     auth: {
         user: "acfe80001@smtp-brevo.com",
         pass: "xUEPwdZX9kyHMVgq"

@@ -2495,3 +2495,119 @@ button i {
         font-size: 16px !important;
     }
 }
+
+/* ============================================================
+   TARGETED FIXES — Footer & Profile Dropdown (Mobile)
+   ============================================================ */
+
+/* ── Profile Dropdown — Fix off-screen overflow on mobile ── */
+@media (max-width: 768px) {
+    #profile-dropdown-trigger {
+        position: relative;
+    }
+    #profile-menu.dropdown-content {
+        right: 0;
+        left: auto;
+        min-width: 180px;
+        max-width: 90vw;
+        /* Ensure it never goes off the right edge */
+        transform: translateX(0);
+        margin-top: 8px;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+        z-index: 9999;
+    }
+    #profile-menu.dropdown-content a {
+        padding: 14px 18px;
+        font-size: 15px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    #profile-menu.dropdown-content a:last-child {
+        border-bottom: none;
+    }
+}
+
+/* ── Footer — Responsive Grid Layout ── */
+
+/* Tablet: 2 columns */
+@media (max-width: 900px) {
+    .site-footer {
+        padding: 36px 24px 0 !important;
+    }
+    .footer-main-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 28px !important;
+    }
+    .footer-bottom-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 16px 0 !important;
+    }
+}
+
+/* Mobile: single column */
+@media (max-width: 600px) {
+    .site-footer {
+        padding: 28px 16px 0 !important;
+    }
+    .footer-main-grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+    }
+    /* Brand column */
+    .footer-main-grid > div:first-child {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding-bottom: 20px;
+    }
+    .footer-main-grid > div:first-child h2 {
+        font-size: 20px !important;
+    }
+    .footer-main-grid > div:first-child p {
+        font-size: 12px !important;
+    }
+    /* Quick links, Shop by, Contact in 2-col sub-grid */
+    .footer-social-row {
+        gap: 8px !important;
+    }
+    .footer-social-row a {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .footer-app-btns > div {
+        padding: 7px 12px !important;
+    }
+    .footer-bottom-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 14px 0 12px !important;
+    }
+    .footer-bottom-bar p {
+        font-size: 11px !important;
+        line-height: 1.6 !important;
+    }
+    .footer-bottom-bar > div {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+    }
+    /* Delivery area notice */
+    .site-footer > div[style*="text-align:center"] span {
+        font-size: 11px !important;
+        flex-wrap: wrap;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+}
+
+/* ── Make sub-columns in footer show 2-up on mid-mobile ── */
+@media (min-width: 400px) and (max-width: 600px) {
+    .footer-main-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 20px !important;
+    }
+    /* Brand column spans full width */
+    .footer-main-grid > div:first-child {
+        grid-column: 1 / -1;
+    }
+}
