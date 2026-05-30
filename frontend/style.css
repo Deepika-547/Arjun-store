@@ -2041,3 +2041,457 @@ button i {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+/* ============================================================
+   MOBILE RESPONSIVE DESIGN — COMPREHENSIVE OVERHAUL
+   Breakpoints: 1024px (tablet), 768px (mobile), 480px (small)
+   ============================================================ */
+
+/* ── Viewport meta already set. Base resets for mobile ── */
+* {
+    box-sizing: border-box;
+}
+
+/* ── Announcement Bar ── */
+@media (max-width: 768px) {
+    .announcement-bar {
+        font-size: 12px;
+        padding: 6px 0;
+    }
+}
+
+/* ── Main Navigation ── */
+@media (max-width: 1024px) {
+    .nav-container {
+        padding: 10px 4%;
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .logo { font-size: 24px; }
+    .logo-badge { font-size: 16px; padding: 3px 10px; }
+    .search-section { max-width: 100%; margin: 0 15px; }
+}
+
+@media (max-width: 768px) {
+    .nav-container {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        padding: 10px 4%;
+        gap: 8px;
+        height: auto;
+    }
+    .logo {
+        font-size: 20px;
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .logo-badge { font-size: 14px; padding: 2px 8px; }
+
+    .header-location-container {
+        display: none; /* Hide on mobile to save space */
+    }
+
+    .search-section {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        max-width: 100%;
+        margin: 0;
+        flex-grow: 1;
+    }
+    .search-bar-group input {
+        padding: 9px 12px;
+        font-size: 14px;
+    }
+    .search-btn { padding: 0 14px; }
+
+    .user-actions {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 14px;
+        justify-content: flex-end;
+    }
+    .action-icon { font-size: 20px; }
+
+    /* Hide text labels in user actions on mobile */
+    .user-actions .action-label { display: none; }
+}
+
+@media (max-width: 480px) {
+    .nav-container { padding: 8px 3%; gap: 6px; }
+    .logo { font-size: 18px; }
+    .logo-badge { font-size: 12px; padding: 2px 7px; border-radius: 4px; }
+    .user-actions { gap: 10px; }
+    .action-icon { font-size: 18px; }
+}
+
+/* ── Category Navbar ── */
+@media (max-width: 768px) {
+    .category-navbar {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .category-navbar::-webkit-scrollbar { display: none; }
+    .category-list {
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 0;
+        padding: 0 10px;
+    }
+    .category-item {
+        padding: 10px 14px !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    /* Keep dropdowns working on mobile */
+    .category-item.dropdown:hover .dropdown-menu,
+    .category-item.dropdown .dropdown-menu {
+        position: fixed;
+        top: auto;
+        left: 0;
+        width: 100%;
+        border-radius: 0 0 12px 12px;
+    }
+}
+
+/* ── Hero Slider ── */
+@media (max-width: 768px) {
+    .hero-slider {
+        height: 200px;
+    }
+    .slide img { object-fit: cover; }
+}
+@media (max-width: 480px) {
+    .hero-slider { height: 160px; }
+}
+
+/* ── Product Grid & Cards ── */
+@media (max-width: 1024px) {
+    .item-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 18px;
+    }
+}
+@media (max-width: 768px) {
+    .container { width: 95%; margin: 20px auto; }
+    .item-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+    .card { padding: 12px; border-radius: 12px; }
+    .card img { height: 120px; margin-bottom: 10px; }
+    .card h3, .card .card-name { font-size: 13px; }
+    .card .card-price, .card .price { font-size: 14px; }
+    .add-btn { padding: 9px; font-size: 13px; border-radius: 6px; }
+}
+@media (max-width: 480px) {
+    .item-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .card { padding: 10px; border-radius: 10px; }
+    .card img { height: 100px; margin-bottom: 8px; }
+    .card h3, .card .card-name { font-size: 12px; }
+    .add-btn { padding: 8px; font-size: 12px; }
+}
+
+/* ── Category Cards (the big icon grid) ── */
+@media (max-width: 768px) {
+    .categories-grid,
+    [style*="grid-template-columns: repeat(auto-fit, minmax(200px"] {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+@media (max-width: 480px) {
+    .categories-grid,
+    [style*="grid-template-columns: repeat(auto-fit, minmax(200px"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+}
+
+/* ── View Header / Section Titles ── */
+@media (max-width: 768px) {
+    .view-header {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        margin-bottom: 15px !important;
+        padding-top: 10px !important;
+        align-items: center !important;
+    }
+    .view-title, h2.view-title {
+        font-size: 18px !important;
+    }
+    .view-subtitle {
+        font-size: 12px !important;
+    }
+}
+
+/* ── Flash Deals Header Strip ── */
+@media (max-width: 768px) {
+    .fs-header-strip {
+        font-size: 13px !important;
+        padding: 10px !important;
+        letter-spacing: 1px !important;
+    }
+}
+
+/* ── Cart Sidebar ── */
+@media (max-width: 768px) {
+    .cart-sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+        right: -100% !important;
+        border-radius: 0 !important;
+    }
+    .cart-sidebar.open {
+        right: 0 !important;
+    }
+    .cart-header { padding: 16px 16px !important; }
+    .cart-list { padding: 16px !important; }
+    .foot-actions {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+}
+
+/* ── Modals ── */
+@media (max-width: 768px) {
+    .modal-card {
+        width: 95% !important;
+        padding: 20px !important;
+        border-radius: 16px !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .modal-title { font-size: 20px !important; }
+}
+@media (max-width: 480px) {
+    .modal-card {
+        width: 100% !important;
+        border-radius: 16px 16px 0 0 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        top: auto !important;
+        transform: none !important;
+        max-height: 85vh;
+    }
+    /* Position modal overlay for bottom-sheet on small screens */
+    .modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+}
+
+/* ── Login / Register Forms ── */
+@media (max-width: 768px) {
+    .auth-card, .login-card, .register-card {
+        width: 95% !important;
+        padding: 24px !important;
+        border-radius: 16px !important;
+    }
+    .auth-tabs button { font-size: 14px !important; padding: 10px !important; }
+}
+
+/* ── Checkout Page ── */
+@media (max-width: 768px) {
+    .checkout-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        margin-top: 10px !important;
+    }
+    .checkout-summary, .checkout-summary-column {
+        order: -1;
+    }
+    .checkout-form input,
+    .checkout-form select,
+    .checkout-form textarea {
+        font-size: 16px !important; /* Prevents iOS zoom */
+    }
+    .slots-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+/* ── Account / Orders Page ── */
+@media (max-width: 768px) {
+    .account-page-layout,
+    .orders-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .account-sidebar {
+        width: 100% !important;
+    }
+    .order-card {
+        padding: 14px !important;
+        border-radius: 12px !important;
+    }
+    .order-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 10px !important;
+    }
+}
+
+/* ── Product Detail View ── */
+@media (max-width: 768px) {
+    .product-detail-layout {
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+    .product-detail-image {
+        width: 100% !important;
+        height: 250px !important;
+    }
+    .product-detail-info {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+/* ── Footer ── */
+@media (max-width: 768px) {
+    footer[style*="padding:48px"],
+    .main-footer {
+        padding: 32px 20px 20px !important;
+        margin-top: 30px !important;
+    }
+    .footer-container {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 24px !important;
+        padding: 0 !important;
+    }
+    .footer-col h2.footer-logo { font-size: 20px !important; }
+    .footer-col h4 { font-size: 15px !important; margin-bottom: 12px !important; }
+    .footer-col ul li a { font-size: 13px !important; }
+    .footer-bottom {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 8px !important;
+        font-size: 12px !important;
+    }
+    .footer-social a { width: 32px !important; height: 32px !important; font-size: 14px !important; }
+    /* App store buttons */
+    .app-store-btns { flex-direction: column; gap: 8px !important; }
+    .app-store-btn { max-width: 140px !important; }
+}
+@media (max-width: 480px) {
+    .footer-container {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+}
+
+/* ── Wishlist Page ── */
+@media (max-width: 768px) {
+    #wishlist-grid-container > div {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+@media (max-width: 480px) {
+    #wishlist-grid-container > div {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+}
+
+/* ── Recently Viewed Grid ── */
+@media (max-width: 768px) {
+    #recently-viewed-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 10px !important;
+    }
+}
+
+/* ── Quantity Stepper ── */
+@media (max-width: 480px) {
+    .qty-stepper, .quantity-control {
+        gap: 4px !important;
+    }
+    .qty-btn, .qty-minus, .qty-plus {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 14px !important;
+    }
+    .qty-value, .qty-display {
+        min-width: 28px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* ── Cart Item in Sidebar ── */
+@media (max-width: 480px) {
+    .cart-item { gap: 10px !important; }
+    .cart-item img { width: 55px !important; height: 55px !important; }
+    .cart-item-name { font-size: 13px !important; }
+    .cart-item-price { font-size: 13px !important; }
+}
+
+/* ── Sticky Bottom Cart Button (mobile UX improvement) ── */
+@media (max-width: 768px) {
+    .cart-box {
+        position: relative;
+    }
+    /* Show cart total count badge prominently */
+    .cart-count {
+        font-size: 10px !important;
+        min-width: 16px !important;
+        height: 16px !important;
+    }
+}
+
+/* ── Admin Panel ── */
+@media (max-width: 768px) {
+    .admin-layout, .admin-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .admin-sidebar { width: 100% !important; position: relative !important; }
+    .admin-stat-cards {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+    }
+    .admin-table { font-size: 12px !important; }
+    .admin-table th, .admin-table td { padding: 8px 10px !important; }
+}
+
+/* ── Utility: hide on mobile ── */
+@media (max-width: 768px) {
+    .hide-mobile { display: none !important; }
+    .show-mobile { display: block !important; }
+    .show-mobile-flex { display: flex !important; }
+}
+
+/* ── Smooth tap feedback for touch devices ── */
+@media (hover: none) {
+    .add-btn:active, .card:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+    .category-item:active {
+        opacity: 0.8;
+    }
+}
+
+/* ── Prevent horizontal scroll on mobile ── */
+@media (max-width: 768px) {
+    body { overflow-x: hidden; }
+    header, nav, main, footer, section { max-width: 100vw; overflow-x: hidden; }
+}
+
+/* ── Input focus: prevent iOS zoom ── */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
