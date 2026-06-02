@@ -190,7 +190,7 @@ function isAdmin(req, res, next) {
 // ─── Email Transporter ────────────────────────────────────────────────────────
 const axios = require('axios');
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY || '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';
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
 async function sendBrevoEmail(to, toName, subject, html) {
     try {
