@@ -191,6 +191,7 @@ function isAdmin(req, res, next) {
 const axios = require('axios');
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
+
 async function sendBrevoEmail(to, toName, subject, html) {
     try {
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
@@ -1364,7 +1365,7 @@ function sendBackInStockEmail(email, productName, price, img) {
             </div>
         </div>`
     };
-    return sendBrevoEmail(email, '', 
+    return sendBrevoEmail(email, 'Valued Customer', 
         `✅ ${productName} is Back in Stock! — Arjun SuperMarket`, 
         mailOptions.html);
 }
