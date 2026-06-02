@@ -191,7 +191,6 @@ function isAdmin(req, res, next) {
 const axios = require('axios');
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-
 async function sendBrevoEmail(to, toName, subject, html) {
     try {
         const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
