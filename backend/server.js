@@ -190,7 +190,7 @@ function isAdmin(req, res, next) {
 // ─── Email Transporter ────────────────────────────────────────────────────────
 const axios = require('axios');
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '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';
 
 async function sendBrevoEmail(to, toName, subject, html) {
     try {
@@ -952,10 +952,33 @@ app.post('/admin/product', isAdmin, (req, res) => {
         .catch(err => res.status(500).json({ success: false, message: err.message }));
 });
 
-app.put('/admin/product/:id', isAdmin, (req, res) => {
-    Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' })
-        .then(p => res.json({ success: true, message: 'Product updated!', product: p }))
-        .catch(err => res.status(500).json({ success: false, message: err.message }));
+app.put('/admin/product/:id', isAdmin, async (req, res) => {
+    try {
+        const oldProduct = await Product.findById(req.params.id);
+        const wasOutOfStock = oldProduct && !oldProduct.inStock;
+        const nowInStock = req.body.inStock === true;
+
+        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+        if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+
+        // If product just came back in stock, send notifications
+        if (wasOutOfStock && nowInStock) {
+            const waitlist = await StockNotification.find({ productName: product.name, notifiedAt: null });
+            if (waitlist.length > 0) {
+                const emailPromises = waitlist.map(n => sendBackInStockEmail(n.email, product.name, product.price, product.img));
+                await Promise.allSettled(emailPromises);
+                await StockNotification.updateMany(
+                    { productName: product.name, notifiedAt: null },
+                    { notifiedAt: new Date() }
+                );
+                return res.json({ success: true, message: `Product updated! ${waitlist.length} back-in-stock notification(s) sent.`, product });
+            }
+        }
+
+        res.json({ success: true, message: 'Product updated!', product });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 app.delete('/admin/product/:id', isAdmin, (req, res) => {
@@ -1121,15 +1144,25 @@ app.put('/admin/product/:id/restock', isAdmin, async (req, res) => {
         if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
 
         // Find all pending notifications for this product
+        console.log(`🔍 Looking for waitlist for product: "${product.name}"`);
         const waitlist = await StockNotification.find({ productName: product.name, notifiedAt: null });
+        console.log(`📋 Waitlist found: ${waitlist.length} user(s)`);
         if (waitlist.length > 0) {
-            const emailPromises = waitlist.map(n => sendBackInStockEmail(n.email, product.name, product.price, product.img));
+            const emailPromises = waitlist.map(n => {
+                console.log(`📧 Sending notification to: ${n.email}`);
+                return sendBackInStockEmail(n.email, product.name, product.price, product.img);
+            });
             await Promise.allSettled(emailPromises);
             // Mark all as notified
             await StockNotification.updateMany(
                 { productName: product.name, notifiedAt: null },
                 { notifiedAt: new Date() }
             );
+            console.log(`✅ All notifications sent and marked`);
+        } else {
+            // Debug: show all pending notifications in DB
+            const allPending = await StockNotification.find({ notifiedAt: null });
+            console.log(`⚠️ No waitlist match. All pending notifications:`, allPending.map(n => n.productName));
         }
 
         res.json({ success: true, message: `Product restocked. ${waitlist.length} notification email(s) sent.`, product });
