@@ -188,28 +188,31 @@ function isAdmin(req, res, next) {
 }
 
 // ─── Email Transporter ────────────────────────────────────────────────────────
-const nodemailer = require("nodemailer");
-const dns = require("dns");
+const axios = require('axios');
 
-dns.setDefaultResultOrder("ipv4first");
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
-const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    family: 4,        // ← Force IPv4
-    auth: {
-        user: "acfe80001@smtp-brevo.com",
-        pass: "xUEPwdZX9kyHMVgq"
+async function sendBrevoEmail(to, toName, subject, html) {
+    try {
+        const response = await axios.post('https://api.brevo.com/v3/smtp/email', {
+            sender: { name: 'Arjun SuperMarket', email: 'deepikathota054@gmail.com' },
+            to: [{ email: to, name: toName || '' }],
+            subject: subject,
+            htmlContent: html
+        }, {
+            headers: {
+                'api-key': BREVO_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('✅ Email sent via Brevo to:', to);
+        return response.data;
+    } catch (err) {
+        console.error('❌ Brevo email error:', err.response?.data || err.message);
+        throw err;
     }
-});
-transporter.verify(function (error, success) {
-    if (error) {
-        console.log("SMTP VERIFY ERROR:", error);
-    } else {
-        console.log("SMTP SERVER READY");
-    }
-});
+}
+console.log('✅ Brevo Email API Ready');
 // ─── Admin Order Notification ────────────────────────────────────────────────
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
@@ -275,12 +278,9 @@ function sendAdminOrderEmail(order) {
         </div>`
     };
 
-    return new Promise((resolve, reject) => {
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) { console.error('❌ Admin order email error:', err.message); reject(err); }
-            else     { console.log('✅ Admin notified for order #' + orderId + ' → ' + info.messageId); resolve(info); }
-        });
-    });
+   return sendBrevoEmail(ADMIN_EMAIL, 'Admin',
+        `🛍️ New Order #${orderId} — ${order.totalAmount} from ${order.name}`,
+        mailOptions.html);
 }
 // ─── OTP Store (in memory, expires in 5 mins) ─────────────────────────────────
 const otpStore = {};
@@ -290,44 +290,22 @@ function generateOTP() {
 }
 
 function sendOTPEmail(email, otp, name = '') {
-    const mailOptions = {
-        from: `"Arjun SuperMarket" <${process.env.EMAIL_USER}>`,
-        to:   email,
-        subject: '🔐 Your OTP for Arjun SuperMarket',
-        html: `
-        <div style="font-family:'Segoe UI',sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;border-radius:12px;overflow:hidden;">
-            <div style="background:#1e293b;padding:25px;text-align:center;">
-                <h2 style="color:#fff;margin:0;">Arjun <span style="color:#ff5200;">SuperMarket</span></h2>
-                <p style="color:#94a3b8;margin:5px 0 0;font-size:13px;">OTP Verification</p>
+    const html = `
+    <div style="font-family:'Segoe UI',sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;border-radius:12px;overflow:hidden;">
+        <div style="background:#1e293b;padding:25px;text-align:center;">
+            <h2 style="color:#fff;margin:0;">Arjun <span style="color:#ff5200;">SuperMarket</span></h2>
+            <p style="color:#94a3b8;margin:5px 0 0;font-size:13px;">OTP Verification</p>
+        </div>
+        <div style="background:#fff;padding:35px 40px;text-align:center;">
+            <p style="color:#1e293b;font-size:16px;">Hello${name ? ' <b>' + name + '</b>' : ''},</p>
+            <div style="background:#f8fafc;border:2px dashed #ff5200;border-radius:12px;padding:20px;margin:20px 0;">
+                <p style="margin:0;font-size:13px;color:#64748b;">Your OTP is</p>
+                <h1 style="margin:10px 0;font-size:48px;font-weight:900;color:#ff5200;letter-spacing:10px;">${otp}</h1>
+                <p style="margin:0;font-size:12px;color:#94a3b8;">Valid for <b>5 minutes</b> only</p>
             </div>
-            <div style="background:#fff;padding:35px 40px;text-align:center;">
-                <p style="color:#1e293b;font-size:16px;margin-bottom:5px;">Hello${name ? ' <b>' + name + '</b>' : ''},</p>
-                <p style="color:#64748b;font-size:14px;margin-bottom:25px;">Use the OTP below to verify your account.</p>
-
-                <div style="background:#f8fafc;border:2px dashed #ff5200;border-radius:12px;padding:20px;margin:20px 0;">
-                    <p style="margin:0;font-size:13px;color:#64748b;">Your OTP is</p>
-                    <h1 style="margin:10px 0;font-size:48px;font-weight:900;color:#ff5200;letter-spacing:10px;">${otp}</h1>
-                    <p style="margin:0;font-size:12px;color:#94a3b8;">Valid for <b>5 minutes</b> only</p>
-                </div>
-
-                <p style="color:#94a3b8;font-size:12px;margin-top:20px;">
-                    If you didn't request this OTP, please ignore this email.
-                </p>
-            </div>
-            <div style="background:#f8fafc;padding:15px;text-align:center;border-top:1px solid #e2e8f0;">
-                <p style="color:#94a3b8;font-size:11px;margin:0;">
-                    © 2026 Arjun Enterprises, Visakhapatnam
-                </p>
-            </div>
-        </div>`
-    };
-
-    return new Promise((resolve, reject) => {
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) { console.error('❌ OTP email error:', err.message); reject(err); }
-            else     { console.log('✅ OTP email sent to:', email); resolve(info); }
-        });
-    });
+        </div>
+    </div>`;
+    return sendBrevoEmail(email, name, '🔐 Your OTP for Arjun SuperMarket', html);
 }
 // ─── Test ─────────────────────────────────────────────────────────────────────
 app.get('/test', (req, res) => res.json({ success: true, message: 'Server is working!' }));
@@ -1189,11 +1167,7 @@ app.post('/contact-support', async (req, res) => {
     const categoryLabel = categoryLabels[category] || '💬 General';
 
     try {
-        await transporter.sendMail({
-            from: `"Arjun SuperMarket Support" <${process.env.EMAIL_USER}>`,
-            to: ADMIN_EMAIL,
-            subject: `[Support] ${categoryLabel} — ${subject}`,
-            html: `
+        const adminHtml = `
                 <div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
                     <div style="background:#ff5200;padding:20px 25px;">
                         <h2 style="color:white;margin:0;font-size:20px;">🎧 New Support Request</h2>
@@ -1212,16 +1186,12 @@ app.post('/contact-support', async (req, res) => {
                         </div>
                         <p style="margin-top:20px;font-size:11px;color:#94a3b8;">Sent from Arjun Supermarket Help & Support — ${new Date().toLocaleString('en-IN')}</p>
                     </div>
-                </div>`
-        });
+                </div>`;
+        await sendBrevoEmail(ADMIN_EMAIL, 'Admin', `[Support] ${categoryLabel} — ${subject}`, adminHtml);
 
         // Also send confirmation to user if they provided email
         if (email) {
-            await transporter.sendMail({
-                from: `"Arjun SuperMarket 🛒" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: `We received your message — ${subject}`,
-                html: `
+            const userHtml = `
                     <div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
                         <div style="background:#1e293b;padding:20px 25px;">
                             <h2 style="color:#ff5200;margin:0;font-size:20px;">Arjun Supermarket</h2>
@@ -1235,8 +1205,8 @@ app.post('/contact-support', async (req, res) => {
                             </div>
                             <p style="color:#64748b;font-size:13px;">Thank you for reaching out!<br><strong>— Arjun Supermarket Team</strong></p>
                         </div>
-                    </div>`
-            });
+                    </div>`;
+            await sendBrevoEmail(email, name, `We received your message — ${subject}`, userHtml);
         }
 
         res.json({ success: true, message: 'Your message has been sent to our support team!' });
@@ -1321,13 +1291,9 @@ function sendWelcomeEmail(name, email) {
         `
     };
 
-    transporter.sendMail(mailOptions, (err, info) => {
-        if (err) {
-            console.error('❌ Email error:', err.message);
-        } else {
-            console.log('<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Welcome email sent to:', email);
-        }
-    });
+    sendBrevoEmail(email, name, '🎊 Welcome to Arjun SuperMarket!', mailOptions.html)
+        .then(() => console.log('✅ Welcome email sent to:', email))
+        .catch(err => console.error('❌ Welcome email error:', err.message));
 }
 
 // ─── Send Back-In-Stock Notification Email ────────────────────────────────────
@@ -1366,10 +1332,7 @@ function sendBackInStockEmail(email, productName, price, img) {
             </div>
         </div>`
     };
-    return new Promise((resolve, reject) => {
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) { console.error('❌ Back-in-stock email error:', err.message); reject(err); }
-            else     { console.log('✅ Back-in-stock email sent to:', email); resolve(info); }
-        });
-    });
+    return sendBrevoEmail(email, '', 
+        `✅ ${productName} is Back in Stock! — Arjun SuperMarket`, 
+        mailOptions.html);
 }
