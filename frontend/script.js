@@ -2728,7 +2728,51 @@ function searchProducts() {
             : "<p style='text-align:center;width:100%;color:#888;padding:50px;'>No products found.</p>";
     }
 }
+// ─── Telugu Voice Search ──────────────────────────────────────────────────────
+function startVoiceSearch() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+    if (!SpeechRecognition) {
+        alert('మీ browser voice search support చేయడం లేదు.\nPlease use Chrome.');
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    const micBtn = document.getElementById('micBtn');
+    const searchInput = document.getElementById('productSearch');
+
+    recognition.lang = 'te-IN';        // Telugu (India)
+    recognition.interimResults = false; // Only final result
+    recognition.maxAlternatives = 1;
+
+    // Visual feedback — mic starts listening
+    micBtn.classList.add('listening');
+    micBtn.textContent = '🔴';
+    searchInput.placeholder = 'వింటున్నాను... (Listening...)';
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        const spokenText = event.results[0][0].transcript;
+        searchInput.value = spokenText;
+        searchProducts(); // Run search immediately with spoken text
+    };
+
+    recognition.onerror = function(event) {
+        if (event.error === 'no-speech') {
+            alert('మాట్లాడలేదు. మళ్ళీ try చేయండి.\n(No speech detected. Try again.)');
+        } else if (event.error === 'not-allowed') {
+            alert('Microphone permission denied.\nPlease allow mic access in browser settings.');
+        }
+    };
+
+    recognition.onend = function() {
+        // Reset mic button back to normal
+        micBtn.classList.remove('listening');
+        micBtn.textContent = '🎤';
+        searchInput.placeholder = 'Search or say a product name...';
+    };
+}
 // ─── CORPORATE PAGE ───────────────────────────────────────────────────────────
 function openCorporatePage() {
     const corpDiv = document.createElement('div');

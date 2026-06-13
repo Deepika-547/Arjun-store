@@ -46,14 +46,15 @@
             </div>
         </div>
 
-        <div class="search-section">
-            <div class="search-bar-group">
-                <input type="text" id="productSearch" placeholder="Search for products..." onkeyup="searchProducts()">
-                <button class="search-btn">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-            </div>
-        </div>
+       <div class="search-bar-group">
+    <input type="text" id="productSearch" placeholder="Search or say a product name..." onkeyup="searchProducts()">
+    <button class="mic-btn" id="micBtn" onclick="startVoiceSearch()" title="Voice search (Telugu/English)">
+        🎤
+    </button>
+    <button class="search-btn">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+</div>
 
         <div class="user-actions">
     <!-- ❤️ Wishlist Button -->
