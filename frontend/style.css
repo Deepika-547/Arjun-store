@@ -227,21 +227,54 @@ body {
     font-size: 20px; 
     text-transform: uppercase;
 }
-
-.search-section { flex-grow: 1; max-width: 500px; margin: 0 30px; }
-.search-bar-group { 
-    display: flex; 
-    border: 2px solid #eee; 
-    border-radius: 8px; 
+.search-section { flex-grow: 1; max-width: 580px; margin: 0 30px; }
+.search-bar-group {
+    display: flex;
+    border: 2.5px solid #e0e0e0;
+    border-radius: 50px;
     overflow: hidden;
     transition: 0.3s;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
 }
-.search-bar-group:focus-within { border-color: var(--primary); }
-.search-bar-group input { flex: 1; padding: 12px; border: none; outline: none; font-size: 15px; }
-.mic-btn { background: #fff; color: #333; border: none; padding: 0 14px; cursor: pointer; font-size: 18px; transition: 0.3s; border-right: 1px solid #e5e7eb; }
-.mic-btn:hover { background: #fff3f0; }
+.search-bar-group:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 4px 18px rgba(0,128,0,0.13);
+}
+.search-bar-group input {
+    flex: 1;
+    padding: 13px 18px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    background: transparent;
+    color: #222;
+}
+.search-bar-group input::placeholder { color: #aaa; }
+.mic-btn {
+    background: transparent;
+    color: #555;
+    border: none;
+    padding: 0 14px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.3s;
+    border-right: 1.5px solid #eee;
+}
+.mic-btn:hover { background: #f0fdf4; color: #16a34a; }
 .mic-btn.listening { animation: pulse 1s infinite; background: #fee2e2; }
-@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }.search-btn:hover { background: #222; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+.search-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0 22px;
+    cursor: pointer;
+    transition: 0.3s;
+    border-radius: 0 50px 50px 0;
+    font-size: 16px;
+}
+.search-btn:hover { background: #145214; }
 .category-navbar {
     width: 100%;
     background: #111;
