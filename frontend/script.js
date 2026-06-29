@@ -2752,11 +2752,24 @@ function startVoiceSearch() {
 
     recognition.start();
 
-    recognition.onresult = function(event) {
-        const spokenText = event.results[0][0].transcript;
-        searchInput.value = spokenText;
-        searchProducts(); // Run search immediately with spoken text
-    };
+    recognition.onresult = async function(event) {
+    const spokenText = event.results[0][0].transcript;
+    searchInput.value = spokenText; // show Telugu text first
+
+    try {
+        // Translate Telugu → English using Google Translate (free)
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=te&tl=en&dt=t&q=${encodeURIComponent(spokenText)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const englishText = data[0][0][0]; // extracted translated word
+
+        searchInput.value = englishText; // replace with English in search bar
+        searchProducts();               // search with English word
+    } catch (err) {
+        // If translation fails, search with original Telugu text anyway
+        searchProducts();
+    }
+};
 
     recognition.onerror = function(event) {
         if (event.error === 'no-speech') {
