@@ -2806,3 +2806,90 @@ button i {
         width: 100% !important;
     }
 }
+/* ═══════════════════════════════════════════════
+   PROFILE PAGE — MOBILE FIXES
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* ── 1. Top Navbar: wrap links into scrollable row ── */
+    .nav-links {
+        gap: 0 !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        width: 100%;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        font-size: 12px !important;
+        flex-direction: column;
+        gap: 3px !important;
+        text-align: center;
+    }
+    .nav-icon { font-size: 16px; }
+
+    /* ── 2. Profile header: stack name & button vertically ── */
+    .profile-card-dark div[style*="justify-content:space-between"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 16px !important;
+        padding: 0 !important;
+    }
+    .profile-card-dark {
+        padding: 30px 20px !important;
+    }
+    .edit-profile-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+    }
+
+    /* ── 3. Sidebar: horizontal scrollable tabs ── */
+    .profile-layout {
+        flex-direction: column !important;
+        margin: 10px !important;
+    }
+    .profile-sidebar {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        border-right: none !important;
+        border-bottom: 2px solid #dde3ec;
+        padding: 0 !important;
+    }
+    .profile-sidebar::-webkit-scrollbar { display: none; }
+
+    .sidebar-tab {
+        flex-shrink: 0 !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 10px 14px !important;
+        font-size: 10px !important;
+        gap: 4px !important;
+        white-space: nowrap;
+        border-left: none !important;
+        border-bottom: 3px solid transparent;
+        margin-top: 0 !important;   /* fix Sign Out's margin-top:50px */
+    }
+    .sidebar-tab i { font-size: 18px; }
+    .sidebar-tab.active {
+        border-left: none !important;
+        border-bottom: 3px solid var(--primary) !important;
+        background: #fff !important;
+        color: var(--primary) !important;
+    }
+
+    /* ── 4. Main content full width ── */
+    .profile-main-content {
+        width: 100% !important;
+        padding: 20px 14px !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+}
