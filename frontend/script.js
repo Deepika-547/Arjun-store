@@ -3835,7 +3835,24 @@ window.handleAuth = async function() {
                 }
             }
             successDiv.style.display = "block";
-            setTimeout(() => switchTab('login'), 2000);
+
+            // Auto-login: registration already verified the user, so log them
+            // straight in instead of bouncing them to the login/OTP screen.
+            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("userData", JSON.stringify({
+                name: data.user.name,
+                phone: data.user.phone
+            }));
+            localStorage.setItem("loggedIn", "true");
+            localStorage.removeItem("selectedAddress");
+            localStorage.removeItem("allSavedAddresses");
+            isLoggedIn = true;
+
+            setTimeout(() => {
+                closeModal();
+                updateLoginUI();
+                manageCheckoutButton();
+            }, 1500);
         } else {
             errorDiv.innerText = data.message;
             errorDiv.style.display = "block";
