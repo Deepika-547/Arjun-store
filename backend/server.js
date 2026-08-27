@@ -1031,7 +1031,7 @@ app.post('/send-otp', (req, res) => {
 
 // ─── SEND OTP (Register) ──────────────────────────────────────────────────────
 app.post('/send-register-otp', (req, res) => {
-    const { name, email, phone } = req.body;
+    const { name, email, phone, referralCode } = req.body;
 
     if (!name || !email || !phone)
         return res.status(400).json({ success: false, message: 'All fields are required.' });
@@ -1044,7 +1044,7 @@ app.post('/send-register-otp', (req, res) => {
                 return res.status(409).json({ success: false, message: 'Mobile or Email already registered.' });
 
             const otp = generateOTP();
-            otpStore[`reg_${phone}`] = { otp, expires: Date.now() + 5 * 60 * 1000, name, email, phone };
+            otpStore[`reg_${phone}`] = { otp, expires: Date.now() + 5 * 60 * 1000, name, email, phone, referralCode };
             console.log(`📧 Register OTP for ${email}: ${otp}`);
 
             sendOTPEmail(email, otp, name)
@@ -1095,18 +1095,68 @@ app.post('/verify-register-otp', (req, res) => {
         return res.status(400).json({ success: false, message: '❌ Invalid OTP. Please try again.' });
 
     delete otpStore[`reg_${phone}`];
+    const { name, email, referralCode } = stored;
 
-    new Registration({ name: stored.name, email: stored.email, phone: stored.phone }).save()
-        .then(saved => {
-            // Send welcome email
-            sendWelcomeEmail(stored.name, stored.email);
-            res.status(201).json({
+    new Registration({ name, email, phone }).save()
+        .then(async () => {
+            // Auto-create their own referral code
+            let code = generateReferralCode(name);
+            const codeExists = await Referral.findOne({ code });
+            if (codeExists) code = generateReferralCode(name + Date.now());
+            await new Referral({ ownerPhone: phone, ownerName: name, code }).save();
+
+            // ── Handle incoming referral code ──────────────────────────────
+            if (referralCode) {
+                const ref = await Referral.findOne({ code: referralCode.toUpperCase().trim() });
+
+                if (!ref) {
+                    sendWelcomeEmail(name, email);
+                    return res.status(201).json({
+                        success: true,
+                        message: 'Registered! (Referral code not found — no bonus applied)',
+                        user: { name, email, phone },
+                        referralWarning: 'Invalid referral code.'
+                    });
+                }
+
+                if (ref.ownerPhone === phone) {
+                    sendWelcomeEmail(name, email);
+                    return res.status(201).json({
+                        success: true,
+                        message: 'Registered! (Cannot use your own referral code)',
+                        user: { name, email, phone },
+                        referralWarning: 'You cannot use your own referral code.'
+                    });
+                }
+
+                await Referral.findOneAndUpdate(
+                    { code: referralCode.toUpperCase().trim() },
+                    { $push: { usedBy: { phone, name } }, $inc: { earnedCredit: 50 } }
+                );
+                await creditWallet(ref.ownerPhone, 50, `Referral bonus — ${name} joined using your code`);
+                await creditWallet(phone, 50, `Welcome bonus — joined via referral code ${referralCode.toUpperCase()}`);
+
+                sendWelcomeEmail(name, email);
+                return res.status(201).json({
+                    success: true,
+                    message: `<i class="fa-solid fa-party-horn" style="color:#f59e0b;"></i> Registered with referral! ₹50 added to your wallet.`,
+                    user: { name, email, phone },
+                    referralBonus: true
+                });
+            }
+
+            // ── Normal registration (no referral code) ─────────────────────
+            sendWelcomeEmail(name, email);
+            return res.status(201).json({
                 success: true,
-                message: 'Registration successful! You can now sign in.',
-                user: { name: stored.name, email: stored.email, phone: stored.phone }
+                message: 'Registration successful!',
+                user: { name, email, phone }
             });
         })
-        .catch(err => res.status(500).json({ success: false, message: err.message }));
+        .catch(err => {
+            console.error('❌ verify-register-otp error:', err);
+            res.status(500).json({ success: false, message: err.message });
+        });
 });
 // ─── Helper: Mask Email ───────────────────────────────────────────────────────
 function maskEmail(email) { 
