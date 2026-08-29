@@ -1486,6 +1486,7 @@ function checkout() {
                             <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#64748b;"><span>Item Total</span><span>₹${subtotal}</span></div>
                             <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#16a34a;font-size:14px;font-weight:700;"><span>Voucher Discount</span><span>-₹${discount}</span></div>
                             <div id="co-points-row" style="display:none;justify-content:space-between;margin-bottom:8px;color:#f59e0b;font-size:14px;font-weight:700;"><span> <i class="fa-solid fa-coins" style="margin-right:4px;"></i>Points Discount</span><span id="co-points-disc">-₹0</span></div>
+                            <div id="co-wallet-row" style="display:none;justify-content:space-between;margin-bottom:8px;color:#16a34a;font-size:14px;font-weight:700;"><span> <i class="fa-solid fa-wallet" style="margin-right:4px;"></i>Wallet Discount</span><span id="co-wallet-disc">-₹0</span></div>
                             <div style="display:flex;justify-content:space-between;margin-bottom:15px;font-size:14px;color:#64748b;"><span>Delivery Fee</span><span>${delivery===0?'FREE':'₹'+delivery}</span></div>
                             <div style="display:flex;justify-content:space-between;font-weight:800;font-size:22px;color:#1e293b;border-top:2px solid #f1f5f9;padding-top:15px;"><span>Total</span><span id="co-total">₹${total}</span></div>
                             <p id="co-earn-preview" style="margin:6px 0 0;font-size:11px;color:#f59e0b;font-weight:600;text-align:right;">  <i class="fa-solid fa-coins"></i>You'll earn ~${Math.floor(total/100)*10} points on this order!</p>
@@ -1582,14 +1583,19 @@ function recalcCheckoutTotal() {
     const subtotal    = cart.reduce((t, i) => t + ((i.price||0)*(i.qty||1)), 0);
     const voucherDisc = window.activeDiscount || 0;
     const pointsDisc  = window.pointsDiscountRs || 0;
+    const walletDisc  = window.walletDiscount || 0;
     const delivery    = subtotal >= 499 ? 0 : 40;
-    const total       = Math.max(0, subtotal - voucherDisc - pointsDisc + delivery);
+    const total       = Math.max(0, subtotal - voucherDisc - pointsDisc - walletDisc + delivery);
     const pointsRow   = document.getElementById('co-points-row');
     const pointsDiscEl = document.getElementById('co-points-disc');
+    const walletRow    = document.getElementById('co-wallet-row');
+    const walletDiscEl = document.getElementById('co-wallet-disc');
     const totalEl     = document.getElementById('co-total');
     const earnEl      = document.getElementById('co-earn-preview');
     if (pointsRow)   pointsRow.style.display = pointsDisc > 0 ? 'flex' : 'none';
     if (pointsDiscEl) pointsDiscEl.innerText = `-₹${pointsDisc}`;
+    if (walletRow)     walletRow.style.display = walletDisc > 0 ? 'flex' : 'none';
+    if (walletDiscEl)  walletDiscEl.innerText  = `-₹${walletDisc}`;
     if (totalEl)      totalEl.innerText      = `₹${total}`;
     if (earnEl)       earnEl.innerText       = `🪙 You'll earn ~${Math.floor(total/100)*10} points on this order!`;
 }
@@ -3915,6 +3921,8 @@ async function injectWalletAtCheckout() {
     if (!user) return;
     if (document.getElementById('wallet-checkout-box')) return;
 
+    window.walletDiscount = 0;
+
     const voucherSection = document.getElementById('checkout-promo-input')?.closest('div');
     if (!voucherSection) return;
 
@@ -3953,6 +3961,7 @@ function applyWalletCredit(balance) {
     const btn = document.getElementById('wallet-apply-btn');
     if (btn) { btn.textContent = `✓ ₹${maxApply} Applied`; btn.style.background = '#64748b'; btn.disabled = true; }
     showReferralToast(`💰 ₹${maxApply} wallet credit applied!`, '#16a34a');
+    recalcCheckoutTotal();
 }
 
 const _origConfirmOrder = window.confirmOrder;
@@ -4573,14 +4582,69 @@ function setQuickLocation(fullAddr) {
     renderSavedAddressesInModal();
 }
 
+// Store location: East Lakshmipuram, Yeleswaram, Kakinada District, AP — 533429
+const STORE_LAT = 17.2833;
+const STORE_LNG = 82.1000;
+const SERVICE_RADIUS_KM = 15; // adjust to widen/narrow the delivery area
+
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function showServiceUnavailablePopup() {
+    if (document.getElementById('service-unavailable-modal')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'service-unavailable-modal';
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999999;
+        display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+    overlay.innerHTML = `
+        <div style="background:white;border-radius:16px;max-width:380px;width:100%;padding:28px 24px;text-align:center;">
+            <div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;display:flex;
+                        align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="fa-solid fa-map-location-dot" style="color:#dc2626;font-size:24px;"></i>
+            </div>
+            <h3 style="margin:0 0 8px;font-size:18px;font-weight:800;color:#1e293b;">
+                Service Not Available
+            </h3>
+            <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.5;">
+                Sorry, we currently deliver only in and around
+                <b>East Lakshmipuram, Yeleswaram (533429)</b> and nearby areas.
+                We're not able to serve your current location yet.
+            </p>
+            <button onclick="document.getElementById('service-unavailable-modal').remove()"
+                style="background:#16a34a;color:white;border:none;border-radius:10px;
+                       padding:12px 24px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">
+                Okay, Got It
+            </button>
+        </div>`;
+
+    document.body.appendChild(overlay);
+}
+
 function getUserGPSLocation() {
     if (!navigator.geolocation) {
         alert("Location access is not supported by your browser.");
         return;
     }
     navigator.geolocation.getCurrentPosition(
-        () => {
-            setQuickLocation("East Lakshmipuram, Yeleswaram");
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            const distance = getDistanceKm(latitude, longitude, STORE_LAT, STORE_LNG);
+
+            if (distance <= SERVICE_RADIUS_KM) {
+                setQuickLocation("East Lakshmipuram, Yeleswaram");
+            } else {
+                closeLocationModal();
+                showServiceUnavailablePopup();
+            }
         },
         () => {
             alert("Please allow location access or type an address manually.");
