@@ -728,8 +728,9 @@ function confirmOrder() {
     const subtotal       = cart.reduce((t, i) => t + ((i.price || 0) * (i.qty || 1)), 0);
     const voucherDisc    = window.activeDiscount || 0;
     const pointsDisc     = window.pointsDiscountRs || 0;
+    const walletDisc     = window.walletDiscount || 0;
     const delivery       = subtotal >= 499 ? 0 : 40;
-    const total          = Math.max(0, subtotal - voucherDisc - pointsDisc + delivery);
+    const total          = Math.max(0, subtotal - voucherDisc - pointsDisc - walletDisc + delivery);
     const pointsToRedeem = window.pointsToRedeem || 0;
     const pointsEarned   = Math.floor(total / 100) * 10;
 
@@ -765,6 +766,7 @@ function confirmOrder() {
             window.appliedCode      = "";
             window.pointsToRedeem   = 0;
             window.pointsDiscountRs = 0;
+            window.walletDiscount   = 0;
             updateCart();
             showOrderSuccess(orderId, deliveryDate, deliverySlot, finalItems, "₹" + total, pointsEarned, pointsToRedeem);
         } else {
@@ -3974,7 +3976,6 @@ window.confirmOrder = function() {
             body: JSON.stringify({ phone: user.phone, amount: window.walletDiscount })
         }).catch(() => {});
     }
-    window.walletDiscount = 0;
     _origConfirmOrder();
 };
 
