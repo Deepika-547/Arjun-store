@@ -1,3 +1,25 @@
+// ─── Splash / intro screen ──────────────────────────────────────────────────
+(function() {
+    const MIN_SPLASH_MS = 2400; // let people actually see the intro, don't flash it
+    const MAX_SPLASH_MS = 4500; // safety net — never block the site longer than this
+    const startTime = Date.now();
+
+    function hideSplash() {
+        const splash = document.getElementById('splash-screen');
+        if (!splash || splash.dataset.hidden) return;
+        splash.dataset.hidden = '1';
+        splash.classList.add('splash-hide');
+        setTimeout(() => splash.remove(), 500);
+    }
+
+    window.addEventListener('load', () => {
+        const elapsed = Date.now() - startTime;
+        setTimeout(hideSplash, Math.max(0, MIN_SPLASH_MS - elapsed));
+    });
+
+    setTimeout(hideSplash, MAX_SPLASH_MS); // hard safety net
+})();
+
 const inventory = {
     "Vegetables": [
         { name: "Ladies Finger", price: 40, qty: "1kg", img: "ladyiesfinger.jpg" },
@@ -257,6 +279,27 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let isLoggedIn = JSON.parse(localStorage.getItem("loggedIn")) || false;
 let currentAuthMode = 'login';
 
+// ─── NEW: Scroll-driven motion — sticky header shrink + Back to Top button ────
+(function() {
+    let lastToggle = false;
+    function onScrollMotion() {
+        const scrolled = window.scrollY > 80;
+        if (scrolled === lastToggle) return; // only touch DOM when the state actually flips
+        lastToggle = scrolled;
+
+        const nav = document.querySelector('.nav-container');
+        if (nav) nav.classList.toggle('nav-scrolled', scrolled);
+
+        const backBtn = document.getElementById('back-to-top-btn');
+        if (backBtn) backBtn.classList.toggle('visible', scrolled);
+    }
+    window.addEventListener('scroll', onScrollMotion, { passive: true });
+})();
+
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // ─── ON PAGE LOAD ─────────────────────────────────────────────────────────────
 
 window.onload = async () => {
@@ -292,6 +335,7 @@ window.onload = async () => {
     loadFlashSales();
     updateWishlistBadge();
     renderRecentlyViewed();
+    initThemeMode();
 
     // ── Handle referral link ───────────────────────────────────
     if (refCode) {
@@ -714,7 +758,7 @@ async function resendOTP(phone, step) {
     }
 }
 // ─── CONFIRM ORDER (saves to MongoDB) ────────────────────────────────────────
-function confirmOrder() {
+function confirmOrder(razorpayOrderId, razorpayPaymentId) {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) { openModal('login'); return; }
 
@@ -740,7 +784,10 @@ function confirmOrder() {
         body: JSON.stringify({
             name: user.name, phone: user.phone, items: cart,
             totalAmount: "₹" + total, address: finalAddress,
-            slot: deliverySlot, date: deliveryDate
+            slot: deliverySlot, date: deliveryDate,
+            paymentMethod: razorpayPaymentId ? 'Online' : 'COD',
+            razorpayOrderId, razorpayPaymentId,
+            couponCode: window.appliedCode || null
         })
     })
     .then(res => res.json())
@@ -1173,8 +1220,22 @@ function addToCart(name, price, img) {
     if (existing) { existing.qty++; } else { cart.push({ name, price, qty: 1, img }); }
     saveCart();
     document.getElementById("cart-sidebar").classList.add("active");
+
     const currentCategory = document.getElementById("view-title")?.innerText.trim();
-    if (currentCategory) renderItems(currentCategory);
+    const btn = window.event?.target?.closest?.('button');
+
+    if (btn && !btn.classList.contains('go-to-cart')) {
+        const original = btn.innerHTML;
+        btn.classList.add('add-btn-success');
+        btn.innerHTML = '✓ Added!';
+        setTimeout(() => {
+            btn.classList.remove('add-btn-success');
+            btn.innerHTML = original;
+            if (currentCategory) renderItems(currentCategory);
+        }, 900);
+    } else if (currentCategory) {
+        renderItems(currentCategory);
+    }
 }
 function removeFromCart(index) {
     cart.splice(index, 1);
@@ -1209,7 +1270,13 @@ function updateCart() {
     const totalPriceDisplay     = document.getElementById('total-price');
     let subtotal   = 0;
     let totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
-    if (countDisplay) countDisplay.innerText = totalItems;
+    if (countDisplay) {
+        if (countDisplay.innerText !== String(totalItems) && totalItems > 0) {
+            const box = document.querySelector('.cart-box');
+            if (box) { box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump'); }
+        }
+        countDisplay.innerText = totalItems;
+    }
     if (sideCount) sideCount.innerText = `${totalItems} Items`;
     if (cart.length === 0) {
         if (itemsList) itemsList.innerHTML = "";
@@ -1232,7 +1299,7 @@ function updateCart() {
                         <p style="color:#666;font-size:13px;">₹${item.price}</p>
                         <div class="qty-controls">
                             <button class="qty-btn" onclick="changeQty(${index},-1)">-</button>
-                            <span style="font-weight:600">${item.qty}</span>
+                            <span class="qty-number" style="font-weight:600">${item.qty}</span>
                             <button class="qty-btn" onclick="changeQty(${index},1)">+</button>
                         </div>
                     </div>
@@ -1379,6 +1446,7 @@ function checkout() {
     window.selectedSlot     = null;
     window.pointsToRedeem   = 0;
     window.pointsDiscountRs = 0;
+    window.selectedPaymentMethod = 'Online';
 
     const subtotal = cart.reduce((t, i) => t + ((i.price || 0) * (i.qty || 1)), 0);
     const discount = window.activeDiscount || 0;
@@ -1404,8 +1472,17 @@ function checkout() {
                     </div>
                     <div style="background:white;padding:20px;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:20px;">
                         <h4 style="margin:0 0 15px 0;"><i class="fa-solid fa-credit-card" style="margin-right:6px;"></i> Payment Method</h4>
-                        <div style="display:flex;align-items:center;gap:12px;padding:15px;background:#f0fdf4;border:1px solid #22c55e;border-radius:10px;">
-                            <span style="font-weight:700;color:#166534;">Cash on Delivery</span>
+                        <div id="payment-method-online" onclick="selectPaymentMethod('Online')" style="display:flex;align-items:center;gap:12px;padding:15px;border:2px solid #16a34a;background:#f0fdf4;border-radius:10px;cursor:pointer;margin-bottom:10px;">
+                            <i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:18px;"></i>
+                            <div style="flex:1;">
+                                <span style="font-weight:700;color:#166534;">Pay Online</span>
+                                <p style="margin:2px 0 0;font-size:12px;color:#166534;">UPI (PhonePe, GPay, Paytm), Cards, Netbanking — via Razorpay</p>
+                            </div>
+                            <i class="fa-solid fa-mobile-screen-button" style="color:#5f259f;font-size:18px;" title="PhonePe & other UPI apps supported"></i>
+                        </div>
+                        <div id="payment-method-cod" onclick="selectPaymentMethod('COD')" style="display:flex;align-items:center;gap:12px;padding:15px;border:2px solid #e2e8f0;background:white;border-radius:10px;cursor:pointer;">
+                            <i class="fa-regular fa-circle" style="color:#94a3b8;font-size:18px;"></i>
+                            <span style="font-weight:700;color:#334155;">Cash on Delivery</span>
                         </div>
                     </div>
                     <div style="background:white;padding:20px;border-radius:12px;border:1px solid #e2e8f0;">
@@ -1459,18 +1536,7 @@ function checkout() {
                                 <button onclick="applyCheckoutPromo()" style="background:#2b3947;color:white;border:none;padding:0 15px;border-radius:8px;cursor:pointer;font-weight:bold;">APPLY</button>
                             </div>
                             <div id="voucher-dropdown-panel" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 16px rgba(0,0,0,0.2);z-index:9999;margin-top:5px;">
-                                <div onclick="selectAndApplyPromo('FIRST50')" style="padding:12px;border-bottom:1px solid #f5f5f5;cursor:pointer;">
-                                    <strong style="color:#689f38;">FIRST50</strong> <span style="float:right;color:#ff5200;font-size:11px;">APPLY</span>
-                                    <p style="margin:3px 0 0;font-size:11px;color:#666;">Free delivery + ₹50 off (on orders above ₹200) on your first order!</p>
-                                </div>
-                                <div onclick="selectAndApplyPromo('WEEKEND100')" style="padding:12px;cursor:pointer;">
-                                    <strong style="color:#689f38;">WEEKEND100</strong> <span style="float:right;color:#ff5200;font-size:11px;">APPLY</span>
-                                    <p style="margin:3px 0 0;font-size:11px;color:#666;">₹100 Cashback (Min ₹999)</p>
-                                </div>
-                                <div onclick="selectAndApplyPromo('SAVE10')" style="padding:12px;cursor:pointer;">
-    <strong style="color:#8b5cf6;">SAVE10</strong> <span style="float:right;color:#ff5200;font-size:11px;">APPLY</span>
-    <p style="margin:3px 0 0;font-size:11px;color:#666;">10% OFF on orders above ₹999 🎉</p>
-</div>
+                                <p style="padding:12px;margin:0;font-size:12px;color:#94a3b8;">Loading offers...</p>
                             </div>
                         </div>
 
@@ -1504,7 +1570,110 @@ function checkout() {
 }
 function validateAndConfirm() {
     if (!window.selectedSlot) { alert("Please select a delivery time slot!"); return; }
-    confirmOrder();
+    if (window.selectedPaymentMethod === 'Online') {
+        startRazorpayPayment();
+    } else {
+        confirmOrder();
+    }
+}
+
+// ─── PAYMENT METHOD SELECTION ─────────────────────────────────────────────────
+function selectPaymentMethod(method) {
+    window.selectedPaymentMethod = method;
+    const onlineBox = document.getElementById('payment-method-online');
+    const codBox    = document.getElementById('payment-method-cod');
+    if (!onlineBox || !codBox) return;
+    if (method === 'Online') {
+        onlineBox.style.border = '2px solid #16a34a';
+        onlineBox.style.background = '#f0fdf4';
+        onlineBox.querySelector('i.fa-circle-check, i.fa-circle').className = 'fa-solid fa-circle-check';
+        onlineBox.querySelector('i').style.color = '#16a34a';
+        codBox.style.border = '2px solid #e2e8f0';
+        codBox.style.background = 'white';
+        codBox.querySelector('i').className = 'fa-regular fa-circle';
+        codBox.querySelector('i').style.color = '#94a3b8';
+    } else {
+        codBox.style.border = '2px solid #16a34a';
+        codBox.style.background = '#f0fdf4';
+        codBox.querySelector('i').className = 'fa-solid fa-circle-check';
+        codBox.querySelector('i').style.color = '#16a34a';
+        onlineBox.style.border = '2px solid #e2e8f0';
+        onlineBox.style.background = 'white';
+        onlineBox.querySelector('i').className = 'fa-regular fa-circle';
+        onlineBox.querySelector('i').style.color = '#94a3b8';
+    }
+}
+
+// ─── RAZORPAY: Kick off online payment (UPI incl. PhonePe, Cards, Netbanking) ──
+function startRazorpayPayment() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) { openModal('login'); return; }
+
+    const subtotal    = cart.reduce((t, i) => t + ((i.price || 0) * (i.qty || 1)), 0);
+    const voucherDisc = window.activeDiscount   || 0;
+    const pointsDisc  = window.pointsDiscountRs || 0;
+    const walletDisc  = window.walletDiscount   || 0;
+    const delivery    = subtotal >= 499 ? 0 : 40;
+    const total       = Math.max(0, subtotal - voucherDisc - pointsDisc - walletDisc + delivery);
+
+    if (total <= 0) { confirmOrder(); return; }
+
+    fetch('/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || "Could not start payment. Please try again."); return; }
+
+        const options = {
+            key: data.key,
+            amount: data.order.amount,
+            currency: data.order.currency,
+            name: "Arjun SuperMarket",
+            description: "Order payment",
+            order_id: data.order.id,
+            prefill: { name: user.name, contact: user.phone },
+            theme: { color: "#16a34a" },
+            handler: function (response) {
+                fetch('/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature
+                    })
+                })
+                .then(res => res.json())
+                .then(verifyData => {
+                    if (verifyData.success) {
+                        confirmOrder(response.razorpay_order_id, response.razorpay_payment_id);
+                    } else {
+                        alert("Payment verification failed. If money was deducted, it will be refunded automatically. Please contact support.");
+                    }
+                })
+                .catch(() => alert("Could not verify payment. Please contact support if money was deducted."));
+            },
+            modal: {
+                ondismiss: function () {
+                    console.log("Payment popup closed by user.");
+                }
+            }
+        };
+
+        if (typeof Razorpay === 'undefined') {
+            alert("Payment gateway failed to load. Please check your connection and try again.");
+            return;
+        }
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+            alert("Payment failed: " + (response.error && response.error.description ? response.error.description : "Please try again."));
+        });
+        rzp.open();
+    })
+    .catch(() => alert("Could not connect to server to start payment."));
 }
 // ─── LOYALTY: Checkout helpers ────────────────────────────────────────────────
 function loadLoyaltyForCheckout(phone) {
@@ -1658,61 +1827,63 @@ async function applyCheckoutPromo() {
     if (!inputField) return;
     const code = inputField.value.toUpperCase().trim();
     const currentSubtotal = cart.reduce((t,i) => t+((i.price||0)*(i.qty||1)),0);
+    const user = JSON.parse(localStorage.getItem('user'));
 
-    if (code === 'FIRST50') {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || !user.phone) {
-            alert("Please log in to use this coupon.");
-            return;
+    if (!code) return;
+
+    try {
+        const res  = await fetch('/validate-coupon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, phone: user?.phone || '', subtotal: currentSubtotal })
+        });
+        const data = await res.json();
+
+        if (data.valid) {
+            window.activeDiscount      = data.discount || 0;
+            window.appliedCode         = code;
+            window.first50FreeDelivery = !!data.freeDelivery;
+            triggerSuccess(data.message || 'Coupon applied!');
+        } else {
+            alert(data.message || 'Code not valid or minimum amount not met.');
+            window.activeDiscount = 0;
+            window.appliedCode    = '';
+            checkout();
         }
-        // Check if this is truly the user's first order
-        try {
-            const res = await fetch(`/my-orders/${user.phone}`);
-            const data = await res.json();
-            const pastOrders = (data.orders || []).filter(o => o.status !== 'Cancelled');
-            if (pastOrders.length > 0) {
-                alert("FIRST50 is only valid on your first order.");
-                window.activeDiscount = 0;
-                window.appliedCode    = '';
-                checkout();
-                return;
-            }
-        } catch (e) {
-            alert("Could not verify order history. Please try again.");
-            return;
-        }
-        // First order confirmed — apply: free delivery + ₹50 off if subtotal >= ₹200
-        const delivery = currentSubtotal >= 499 ? 0 : 40;
-        let disc = delivery; // always give free delivery
-        if (currentSubtotal >= 200) disc += 50;
-        window.activeDiscount    = disc;
-        window.appliedCode       = 'FIRST50';
-        window.first50FreeDelivery = true; // flag to waive delivery charge
-        const msg = currentSubtotal >= 200
-            ? `Free delivery + ₹50 off applied!`
-            : `Free delivery applied! (Add items worth ₹${200 - currentSubtotal} more to get ₹50 off too)`;
-        triggerSuccess(msg);
-    } else if (code === 'WEEKEND100' && currentSubtotal >= 999) {
-        window.activeDiscount = 100;
-        window.appliedCode    = 'WEEKEND100';
-        triggerSuccess("₹100 cashback applied!");
-    } else if (code === 'SAVE10' && currentSubtotal >= 999) {
-        window.activeDiscount = Math.round(currentSubtotal * 0.10);
-        window.appliedCode    = 'SAVE10';
-        triggerSuccess("10% off applied!");
-    } else if (code === 'SAVE10' && currentSubtotal < 999) {
-        alert("Add items worth ₹" + (999 - currentSubtotal) + " more to use SAVE10.");
-        window.activeDiscount = 0;
-        window.appliedCode    = '';
-        checkout();
-    } else {
-        alert("Code not valid or minimum amount not met.");
-        window.activeDiscount = 0;
-        window.appliedCode    = '';
-        checkout();
+    } catch (e) {
+        alert('Could not validate coupon. Please try again.');
     }
 }
-function showVoucherPanel() { const p=document.getElementById('voucher-dropdown-panel'); if(p) p.style.display='block'; }
+function showVoucherPanel() {
+    const p = document.getElementById('voucher-dropdown-panel');
+    if (!p) return;
+    p.style.display = 'block';
+    if (!p.dataset.loaded) loadVoucherPanel();
+}
+function loadVoucherPanel() {
+    const p = document.getElementById('voucher-dropdown-panel');
+    if (!p) return;
+    fetch('/coupons/active')
+        .then(r => r.json())
+        .then(data => {
+            const coupons = data.coupons || [];
+            p.dataset.loaded = '1';
+            if (!coupons.length) {
+                p.innerHTML = `<p style="padding:12px;margin:0;font-size:12px;color:#94a3b8;">No offers available right now.</p>`;
+                return;
+            }
+            p.innerHTML = coupons.map(c => {
+                const label = c.type === 'flat'
+                    ? `₹${c.value} OFF${c.minOrderValue ? ' (Min ₹' + c.minOrderValue + ')' : ''}`
+                    : `${c.value}% OFF${c.maxDiscount ? ' up to ₹' + c.maxDiscount : ''}${c.minOrderValue ? ' (Min ₹' + c.minOrderValue + ')' : ''}`;
+                return `<div onclick="selectAndApplyPromo('${c.code}')" style="padding:12px;border-bottom:1px solid #f5f5f5;cursor:pointer;">
+                    <strong style="color:#689f38;">${c.code}</strong> <span style="float:right;color:#ff5200;font-size:11px;">APPLY</span>
+                    <p style="margin:3px 0 0;font-size:11px;color:#666;">${label}${c.freeDelivery ? ' + Free Delivery' : ''}</p>
+                </div>`;
+            }).join('');
+        })
+        .catch(() => { p.innerHTML = `<p style="padding:12px;margin:0;font-size:12px;color:#ef4444;">Could not load offers.</p>`; });
+}
 function hideVoucherPanel() { const p=document.getElementById('voucher-dropdown-panel'); if(p) p.style.display='none'; }
 function selectAndApplyPromo(code) { const f=document.getElementById('checkout-promo-input'); if(f){f.value=code;hideVoucherPanel();applyCheckoutPromo();} }
 function triggerSuccess(msg) {
@@ -1749,8 +1920,8 @@ function showOrderSuccess(orderId, date, slot, items=[], total="₹0", pointsEar
 
     overlay.innerHTML = `
         <div style="background:white;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;">
-            <div style="width:80px;height:80px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;border:2px solid #16a34a;">
-                <i class="fa-solid fa-check" style="color:#16a34a;font-size:40px;"></i>
+            <div class="order-check-circle" style="width:80px;height:80px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;border:2px solid #16a34a;">
+                <i class="fa-solid fa-check order-check-icon" style="color:#16a34a;font-size:40px;"></i>
             </div>
             <h1 style="color:#1e293b;margin:0 0 8px 0;font-size:28px;font-weight:800;">Order Received!</h1>
             <p style="color:#64748b;font-size:15px;margin:0 0 24px 0;">Confirmed for <b style="color:#16a34a;">${date||'Today'}</b> during <b style="color:#16a34a;">${slot||'Scheduled Slot'}</b></p>
@@ -1814,6 +1985,7 @@ function openFullProfile() {
             <div class="profile-layout" style="display:flex;max-width:1100px;margin:-30px auto 50px;background:white;box-shadow:0 10px 30px rgba(0,0,0,0.1);position:relative;z-index:10;min-height:500px;border-radius:12px;overflow:hidden;">
                 <div class="profile-sidebar" style="background:#edf1f7;width:280px;padding:20px 0;">
                     <div class="sidebar-tab active" onclick="renderProfileTab('orders')"><i class="fa-solid fa-box nav-icon"></i> Purchase History</div>
+                    <div class="sidebar-tab" onclick="renderProfileTab('subscriptions')"><i class="fa-solid fa-repeat nav-icon"></i> Subscriptions</div>
                     <div class="sidebar-tab" onclick="renderProfileTab('loyalty')"><i class="fa-solid fa-coins nav-icon"></i> Loyalty Points</div>
                     <div class="sidebar-tab" onclick="renderProfileTab('referral')"><i class="fa-solid fa-gift nav-icon"></i> Refer & Earn</div>
                     <div class="sidebar-tab" onclick="renderProfileTab('address')"><i class="fa-solid fa-location-dot nav-icon"></i> Saved Addresses</div>
@@ -1932,6 +2104,10 @@ function renderProfileTab(tabName) {
                 </div>`;
         });
 
+    break;
+}
+case 'subscriptions': {
+    renderSubscriptionsTab();
     break;
 }
 case 'loyalty': {
@@ -3275,10 +3451,37 @@ function toggleWishlist(name, price, img, qty, btnEl) {
         // Animate the heart
         btnEl.style.transform = 'scale(1.5)';
         setTimeout(() => btnEl.style.transform = 'scale(1)', 300);
+
+        // NEW: mini heart-particle burst
+        spawnHeartBurst(btnEl);
     }
 
     // Keep wishlist badge in nav up to date
     updateWishlistBadge();
+}
+
+// ─── NEW: mini particle burst for wishlist heart ───────────────────────────────
+function spawnHeartBurst(originEl) {
+    const rect = originEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const count = 6;
+
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('span');
+        p.className = 'heart-particle';
+        p.textContent = '❤';
+        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.4 - 0.2);
+        const distance = 26 + Math.random() * 14;
+        p.style.left = `${cx}px`;
+        p.style.top  = `${cy}px`;
+        p.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+        p.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+        p.style.fontSize = `${8 + Math.random() * 6}px`;
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => p.remove());
+        setTimeout(() => p.remove(), 900); // safety cleanup
+    }
 }
 
 // ─── Toast notification ───────────────────────────────────────────────────────
@@ -3967,7 +4170,7 @@ function applyWalletCredit(balance) {
 }
 
 const _origConfirmOrder = window.confirmOrder;
-window.confirmOrder = function() {
+window.confirmOrder = function(razorpayOrderId, razorpayPaymentId) {
     if (window.walletDiscount > 0) {
         const user = JSON.parse(localStorage.getItem('user'));
         fetch("/wallet/redeem", {
@@ -3976,7 +4179,7 @@ window.confirmOrder = function() {
             body: JSON.stringify({ phone: user.phone, amount: window.walletDiscount })
         }).catch(() => {});
     }
-    _origConfirmOrder();
+    _origConfirmOrder(razorpayOrderId, razorpayPaymentId);
 };
 
 const _origCheckout = window.checkout;
@@ -4683,3 +4886,145 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+// ============================================================
+// DARK MODE TOGGLE
+// ============================================================
+function initThemeMode() {
+    const saved = localStorage.getItem('theme') || 'light';
+    applyTheme(saved);
+}
+function applyTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    const icon = document.getElementById('theme-toggle-icon');
+    if (icon) icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    localStorage.setItem('theme', theme);
+}
+function toggleDarkMode() {
+    const current = document.body.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ============================================================
+// SCHEDULED / RECURRING ORDERS (Subscriptions)
+// ============================================================
+function openScheduleOrderModal() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) { openModal('login'); return; }
+    if (!cart.length) { alert("Your basket is empty — add items before scheduling a recurring order."); return; }
+
+    const address = localStorage.getItem("selectedAddress") || "East Lakshmipuram, Yeleswaram";
+    const existing = document.getElementById('schedule-order-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'schedule-order-modal';
+    modal.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;";
+    modal.innerHTML = `
+        <div style="background:white;border-radius:16px;padding:26px;width:90%;max-width:400px;">
+            <h3 style="margin:0 0 6px;">🔁 Schedule This Order</h3>
+            <p style="font-size:13px;color:#94a3b8;margin:0 0 18px;">We'll auto-place this basket for you on a repeat schedule.</p>
+            <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Repeat every</label>
+            <select id="sub-frequency" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;">
+                <option value="daily">Day</option>
+                <option value="alternate">2 Days</option>
+                <option value="weekly">Week</option>
+            </select>
+            <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Delivery Address</label>
+            <p style="font-size:13px;color:#1e293b;background:#f8fafc;padding:10px;border-radius:8px;margin:0 0 18px;">${address}</p>
+            <div style="display:flex;gap:10px;">
+                <button onclick="closeScheduleOrderModal()" style="flex:1;padding:12px;border-radius:8px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-weight:700;">Cancel</button>
+                <button onclick="confirmScheduleOrder()" style="flex:2;padding:12px;border-radius:8px;border:none;background:#ff5200;color:white;cursor:pointer;font-weight:700;">Confirm Schedule</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+}
+function closeScheduleOrderModal() {
+    document.getElementById('schedule-order-modal')?.remove();
+}
+function confirmScheduleOrder() {
+    const user      = JSON.parse(localStorage.getItem("user"));
+    const frequency = document.getElementById('sub-frequency').value;
+    const address   = localStorage.getItem("selectedAddress") || "East Lakshmipuram, Yeleswaram";
+
+    fetch('/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            phone: user.phone, name: user.name, items: cart,
+            address, slot: 'Morning', frequency
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        closeScheduleOrderModal();
+        if (data.success) triggerSuccess('Recurring order scheduled! Manage it under My Account → Subscriptions.');
+        else alert(data.message || 'Could not schedule this order.');
+    })
+    .catch(() => { closeScheduleOrderModal(); alert('Could not connect to server.'); });
+}
+
+function renderSubscriptionsTab() {
+    const mainContent = document.querySelector('.profile-main-content');
+    if (!mainContent) return;
+    mainContent.innerHTML = `<h2>My Subscriptions</h2>
+        <div id="subs-tab-content"><p style="text-align:center;padding:40px;color:#64748b;">Loading...</p></div>`;
+
+    const user      = JSON.parse(localStorage.getItem("user"));
+    const container = document.getElementById('subs-tab-content');
+    if (!user) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;opacity:0.6;">
+            <i class="fa-solid fa-user-lock" style="font-size:30px;margin-bottom:10px;color:#3b82f6;"></i>
+            <p>Please login to view subscriptions.</p>
+        </div>`;
+        return;
+    }
+
+    fetch(`/subscriptions/${user.phone}`)
+        .then(r => r.json())
+        .then(data => {
+            const subs = data.subscriptions || [];
+            if (!subs.length) {
+                container.innerHTML = `<div style="text-align:center;padding:60px;opacity:0.6;">
+                    <i class="fa-solid fa-repeat" style="font-size:40px;margin-bottom:15px;color:#f59e0b;"></i>
+                    <h3>No recurring orders yet.</h3>
+                    <p style="color:#94a3b8;">Add items to your basket and choose "Schedule this order" to set one up.</p>
+                </div>`;
+                return;
+            }
+            const freqLabel = { daily: 'Every day', alternate: 'Every 2 days', weekly: 'Every week' };
+            container.innerHTML = subs.map(s => `
+                <div style="border:1px solid #e2e8f0;padding:16px;border-radius:14px;margin-bottom:14px;background:white;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:800;color:#1e293b;"><i class="fa-solid fa-repeat" style="color:#6366f1;"></i> ${freqLabel[s.frequency] || s.frequency}</span>
+                        <span style="font-size:11px;font-weight:bold;padding:4px 12px;border-radius:20px;background:${s.isPaused ? '#fff1f2' : '#f0fdf4'};color:${s.isPaused ? '#e11d48' : '#16a34a'};">
+                            ${s.isPaused ? 'Paused' : 'Active'}
+                        </span>
+                    </div>
+                    <div style="font-size:13px;color:#64748b;margin-bottom:8px;">${(s.items || []).map(i => i.name).join(', ')}</div>
+                    <div style="font-size:12px;color:#94a3b8;border-top:1px dashed #eee;padding-top:8px;margin-bottom:12px;">
+                        Next delivery: ${new Date(s.nextDeliveryDate).toLocaleDateString('en-IN')} &nbsp;•&nbsp; ${s.address}
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="${s.isPaused ? `resumeSubscription('${s._id}')` : `pauseSubscription('${s._id}')`}"
+                            style="flex:1;padding:10px;border-radius:10px;border:1px solid #e2e8f0;cursor:pointer;background:#f8fafc;font-weight:700;font-size:13px;">
+                            ${s.isPaused ? '▶ Resume' : '⏸ Pause'}
+                        </button>
+                        <button onclick="cancelSubscription('${s._id}')"
+                            style="flex:1;padding:10px;border-radius:10px;border:1px solid #fca5a5;cursor:pointer;background:#fff1f0;color:#ef4444;font-weight:700;font-size:13px;">
+                            🗑 Cancel
+                        </button>
+                    </div>
+                </div>`).join('');
+        })
+        .catch(() => { container.innerHTML = `<p style="text-align:center;padding:40px;color:red;">Could not load subscriptions.</p>`; });
+}
+function pauseSubscription(id) {
+    fetch(`/subscriptions/${id}/pause`, { method: 'PUT' }).then(() => renderSubscriptionsTab());
+}
+function resumeSubscription(id) {
+    fetch(`/subscriptions/${id}/resume`, { method: 'PUT' }).then(() => renderSubscriptionsTab());
+}
+function cancelSubscription(id) {
+    if (!confirm('Cancel this recurring order?')) return;
+    fetch(`/subscriptions/${id}`, { method: 'DELETE' }).then(() => renderSubscriptionsTab());
+}

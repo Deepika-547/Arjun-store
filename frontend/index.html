@@ -3,20 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arjun Store - East Lakshmipuram| Online Grocery</title>
+    <title>Arjun Store | Arjun Grocery - Online Supermarket in East Lakshmipuram</title>
     <meta name="google-site-verification" content="wLDZIp_BdUHJXgi2YWq8C5o3L2Pn4eKN6C5neyFAZ-Y" />
-    <meta name="description" content="Arjun Store - Fresh groceries delivered to your doorstep in East Lakshmipura. Order online from Arjun SuperMarket now!">
-    <meta name="keywords" content="Arjun store, Arjun store East Lakshmipuram, Arjun SuperMarket, Arjun Enterprises, grocery store East Lakshmipuram, online grocery East Lakshmipuram, supermarket East Lakshmipuram">
+    <meta name="description" content="Arjun Store (Arjunstore) - your local Arjun Grocery in East Lakshmipuram, Visakhapatnam. Fresh groceries, vegetables, dairy and daily essentials delivered fast. Order online from Arjun SuperMarket now!">
+    <meta name="keywords" content="Arjun store, Arjun-store, Arjunstore, arjunstore, Arjun grocery, Arjun Store East Lakshmipuram, Arjun SuperMarket, Arjun Enterprises, grocery store East Lakshmipuram, online grocery East Lakshmipuram, supermarket East Lakshmipuram, Kakinada district grocery">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="Arjun Store - East Lakshmipuram, Visakhapatnam">
+    <meta property="og:title" content="Arjun Store | Arjun Grocery - East Lakshmipuram, Visakhapatnam">
     <meta property="og:description" content="Arjun Store - Fresh groceries delivered to your doorstep in East Lakshmipuram, Visakhapatnam. Order online now!">
     <meta property="og:url" content="https://arjun-store.onrender.com">
     <meta property="og:type" content="website">
     <link rel="canonical" href="https://arjun-store.onrender.com" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "GroceryStore",
+      "name": "Arjun Store",
+      "alternateName": ["Arjun-store", "Arjunstore", "Arjun Grocery", "Arjun SuperMarket", "Arjun Enterprises"],
+      "url": "https://arjun-store.onrender.com",
+      "telephone": "+91-9494126565",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Vinayaka Temple Street, EL Puram",
+        "addressLocality": "East Lakshmipuram, Yeleswaram",
+        "addressRegion": "Andhra Pradesh",
+        "addressCountry": "IN"
+      },
+      "openingHours": "Mo-Su 07:00-22:00",
+      "servesCuisine": "Grocery",
+      "priceRange": "₹₹"
+    }
+    </script>
 </head>
 <body>
+
+<div id="splash-screen" aria-hidden="true">
+    <div class="splash-basket">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="splash-drop splash-drop-1">🥦</span>
+        <span class="splash-drop splash-drop-2">🍅</span>
+        <span class="splash-drop splash-drop-3">🍞</span>
+    </div>
+    <h1 class="splash-wordmark">Arjun <span>SuperMarket</span></h1>
+    <p class="splash-tagline">Fresh groceries, delivered fast</p>
+    <div class="splash-loader"><span></span><span></span><span></span></div>
+</div>
 
 <div class="announcement-bar">
     <div class="scrolling-text">
@@ -71,6 +103,10 @@
         <span id="cart-count">0</span>
     </div>
             
+            <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDarkMode()" title="Toggle dark mode">
+                <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
+            </button>
+
             <div class="action-item" id="profile-dropdown-trigger" onclick="toggleProfileMenu(event)">
                 <i class="fa-regular fa-user action-icon"></i>
                 <div id="profile-menu" class="dropdown-content">
@@ -93,10 +129,12 @@
 <!-- CATEGORY NAVBAR -->
 <nav class="category-navbar">
   <ul class="category-list">
-    <li class="category-item active" onclick="handleCategoryClick(this, 'all')">All</li>
-    
+    <li class="category-item active" onclick="handleCategoryClick(this, 'all')">
+      <span><span class="nav-icon"><i class="fa-solid fa-border-all"></i></span><b>All</b></span>
+    </li>
+
     <li class="category-item dropdown">
-      <span onclick="handleCategoryClick(this, 'Snacks & Drinks')">Snacks & Drinks <i class="fas fa-chevron-down"></i></span>
+      <span onclick="handleCategoryClick(this, 'Snacks & Drinks')"><span class="nav-icon"><i class="fa-solid fa-cookie-bite"></i></span><b>Snacks &amp; Drinks <i class="fas fa-chevron-down"></i></b></span>
       <div class="dropdown-menu">
         <a href="#" onclick="renderItems('Chips&Namkeens')">Chips & Namkeens</a>
         <a href="#" onclick="renderItems('ColdDrinks&Juices')">Cold Drinks & Juices</a>
@@ -107,7 +145,7 @@
     </li>
 
     <li class="category-item dropdown">
-      <span onclick="handleCategoryClick(this, 'Beauty & Wellness')">Beauty & Wellness <i class="fas fa-chevron-down"></i></span>
+      <span onclick="handleCategoryClick(this, 'Beauty & Wellness')"><span class="nav-icon"><i class="fa-solid fa-spa"></i></span><b>Beauty &amp; Wellness <i class="fas fa-chevron-down"></i></b></span>
       <div class="dropdown-menu">
         <a href="#" onclick="renderItems('Skincare')">Skincare</a>
         <a href="#" onclick="renderItems('Bath&Body')">Bath & Body</a>
@@ -118,16 +156,18 @@
         <a href="#" onclick="renderItems('Makeup')">Makeup</a>
       </div>
     </li>
-     <li class="category-item dropdown">
-      <span onclick="handleCategoryClick(this, 'Home Essentials')">Home Essentials<i class="fas fa-chevron-down"></i></span>
+
+    <li class="category-item dropdown">
+      <span onclick="handleCategoryClick(this, 'Home Essentials')"><span class="nav-icon"><i class="fa-solid fa-broom"></i></span><b>Home Essentials <i class="fas fa-chevron-down"></i></b></span>
       <div class="dropdown-menu">
         <a href="#" onclick="renderItems('Cleaning')">cleaning</a>
         <a href="#" onclick="renderItems('Washing')">washing</a>
         <a href="#" onclick="renderItems('Puja Essentials')">Puja Essentials</a>
       </div>
     </li>
+
     <li class="category-item dropdown">
-      <span onclick="handleCategoryClick(this, 'Household Groceries')">Household Groceries<i class="fas fa-chevron-down"></i></span>
+      <span onclick="handleCategoryClick(this, 'Household Groceries')"><span class="nav-icon"><i class="fa-solid fa-basket-shopping"></i></span><b>Household Groceries <i class="fas fa-chevron-down"></i></b></span>
       <div class="dropdown-menu">
         <a href="#" onclick="renderItems('Vegetables')">vegetables</a>
         <a href="#" onclick="renderItems('Spices')">Spices</a>
@@ -219,6 +259,9 @@
     Checkout Now
 </button>
         </div>
+        <button onclick="openScheduleOrderModal()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1.5px dashed #cbd5e1;border-radius:8px;color:#64748b;cursor:pointer;font-size:13px;font-weight:700;">
+            <i class="fa-solid fa-repeat"></i> Schedule this order (daily/weekly)
+        </button>
     </div>
 </aside>
 
@@ -230,6 +273,7 @@
             <div class="slide"><img src="banner5.jpg" alt="Banner 3"></div>
         </div>
     </section>
+
     <style>
 /* ── Flash Sale Animations ───────────────────────────── */
 @keyframes fs-pulse   { 0%,100%{opacity:1;transform:scale(1);}  50%{opacity:.85;transform:scale(1.06);} }
@@ -766,11 +810,17 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
       <span style="font-size:11px;color:#334155;font-weight:600;letter-spacing:0.5px;">WE ACCEPT</span>
       <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 12px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px;"><i class="fas fa-money-bill-wave"></i> Cash on Delivery</span>
+      <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 12px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:6px;"><i class="fas fa-mobile-screen-button"></i> UPI / PhonePe</span>
       <span style="background:rgba(255,82,0,0.15);border:1px solid rgba(255,82,0,0.3);border-radius:6px;padding:5px 12px;font-size:11px;color:#ff5200;display:flex;align-items:center;gap:6px;"><i class="fas fa-bolt"></i> 9 Min Delivery</span>
     </div>
   </div>
 </footer>
-<script src="script.js?v=2" defer></script>
+<button id="back-to-top-btn" onclick="scrollToTop()" title="Back to top" aria-label="Back to top">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="script.js?v=9" defer></script>
 <div id="full-profile-page" class="full-screen-overlay">
     <div class="account-content-wrapper">
         <div class="account-header">

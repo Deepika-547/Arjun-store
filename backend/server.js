@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
 
 const app = express();
 app.use(express.json());
@@ -11,6 +13,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.static(path.join(__dirname, '../frontend')));
+
+// ─── Razorpay Instance ───────────────────────────────────────────────────────────────────
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 // ─── Single DB Connection (arjunDB) ───────────────────────────────────────────
 mongoose.connect(
@@ -47,6 +55,11 @@ const orderSchema = new mongoose.Schema({
     slot:        { type: String },
     date:        { type: String },
     status:      { type: String, default: 'Order Placed' },
+    paymentMethod:      { type: String, default: 'COD' }, // 'COD' or 'Online'
+    paymentStatus:      { type: String, default: 'Pending' }, // 'Pending' or 'Paid'
+    razorpayOrderId:    { type: String },
+    razorpayPaymentId:  { type: String },
+    couponCode:         { type: String, default: null },
     createdAt:   { type: Date, default: Date.now }
 });
 const Order = mongoose.model('Order', orderSchema, 'orders');
@@ -179,6 +192,105 @@ async function creditWallet(phone, amount, reason) {
         { upsert: true, returnDocument: 'after' }
     );
 }
+// ─── Coupon Schema ─────────────────────────────────────────────────────────────
+const couponSchema = new mongoose.Schema({
+    code:          { type: String, required: true, unique: true, uppercase: true, trim: true },
+    type:          { type: String, enum: ['flat', 'percent'], required: true },
+    value:         { type: Number, required: true },       // ₹ off, or % off
+    maxDiscount:   { type: Number, default: null },         // cap for percent coupons
+    minOrderValue: { type: Number, default: 0 },
+    usageLimit:    { type: Number, default: null },         // total redemptions allowed, null = unlimited
+    perUserLimit:  { type: Number, default: 1 },
+    freeDelivery:  { type: Boolean, default: false },
+    expiresAt:     { type: Date, default: null },
+    isActive:      { type: Boolean, default: true },
+    timesUsed:     { type: Number, default: 0 },
+    usedBy:        [{ phone: String, count: { type: Number, default: 1 } }],
+    createdAt:     { type: Date, default: Date.now }
+});
+const Coupon = mongoose.model('Coupon', couponSchema, 'coupons');
+
+// Server-side coupon evaluation. Returns { valid, message, discount, freeDelivery, coupon }
+async function evaluateCoupon(code, phone, subtotal) {
+    if (!code) return { valid: false, message: 'No coupon code provided.' };
+    const coupon = await Coupon.findOne({ code: String(code).toUpperCase().trim() });
+    if (!coupon || !coupon.isActive) return { valid: false, message: 'Invalid or inactive coupon.' };
+    if (coupon.expiresAt && new Date() > new Date(coupon.expiresAt))
+        return { valid: false, message: 'This coupon has expired.' };
+    if (coupon.usageLimit !== null && coupon.timesUsed >= coupon.usageLimit)
+        return { valid: false, message: 'This coupon has reached its usage limit.' };
+    if (subtotal < coupon.minOrderValue)
+        return { valid: false, message: `Add items worth ₹${coupon.minOrderValue - subtotal} more to use ${coupon.code}.` };
+    if (phone && coupon.perUserLimit !== null) {
+        const entry = coupon.usedBy.find(u => u.phone === phone);
+        if (entry && entry.count >= coupon.perUserLimit)
+            return { valid: false, message: 'You have already used this coupon.' };
+    }
+    let discount = coupon.type === 'flat' ? coupon.value : Math.round(subtotal * (coupon.value / 100));
+    if (coupon.type === 'percent' && coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+    discount = Math.min(discount, subtotal);
+    return { valid: true, message: 'Coupon applied!', discount, freeDelivery: coupon.freeDelivery, coupon };
+}
+
+async function recordCouponUsage(code, phone) {
+    if (!code || !phone) return;
+    const coupon = await Coupon.findOne({ code: String(code).toUpperCase().trim() });
+    if (!coupon) return;
+    const entry = coupon.usedBy.find(u => u.phone === phone);
+    if (entry) entry.count += 1;
+    else coupon.usedBy.push({ phone, count: 1 });
+    coupon.timesUsed += 1;
+    await coupon.save();
+}
+
+// ─── Subscription Schema (Recurring / Scheduled Orders) ───────────────────────
+const subscriptionSchema = new mongoose.Schema({
+    phone:            { type: String, required: true },
+    name:             { type: String, required: true },
+    items:            { type: Array, required: true },
+    address:          { type: String, required: true },
+    slot:             { type: String, default: 'Morning' },
+    frequency:        { type: String, enum: ['daily', 'alternate', 'weekly'], default: 'daily' },
+    isPaused:         { type: Boolean, default: false },
+    nextDeliveryDate: { type: Date, required: true },
+    lastOrderId:      { type: String, default: null },
+    lastOrderedAt:    { type: Date, default: null },
+    createdAt:        { type: Date, default: Date.now }
+});
+const Subscription = mongoose.model('Subscription', subscriptionSchema, 'subscriptions');
+
+function computeNextDeliveryDate(from, frequency) {
+    const next = new Date(from);
+    if (frequency === 'weekly') next.setDate(next.getDate() + 7);
+    else if (frequency === 'alternate') next.setDate(next.getDate() + 2);
+    else next.setDate(next.getDate() + 1); // daily
+    return next;
+}
+
+// Finds subscriptions due for delivery and places an order for each.
+async function processDueSubscriptions() {
+    try {
+        const due = await Subscription.find({ isPaused: false, nextDeliveryDate: { $lte: new Date() } });
+        for (const sub of due) {
+            const totalAmount = '₹' + sub.items.reduce((t, i) => t + ((i.price || 0) * (i.qty || i.quantity || 1)), 0);
+            const order = await new Order({
+                name: sub.name, phone: sub.phone, items: sub.items,
+                totalAmount, address: sub.address, slot: sub.slot,
+                date: 'Subscription', paymentMethod: 'COD', paymentStatus: 'Pending'
+            }).save();
+            sub.lastOrderId   = order._id.toString();
+            sub.lastOrderedAt = new Date();
+            sub.nextDeliveryDate = computeNextDeliveryDate(sub.nextDeliveryDate, sub.frequency);
+            await sub.save();
+            console.log(`🔁 Subscription order placed for ${sub.phone} (order ${order._id})`);
+        }
+    } catch (err) {
+        console.error('Subscription processing error:', err.message);
+    }
+}
+// Check for due subscriptions every 30 minutes
+setInterval(processDueSubscriptions, 30 * 60 * 1000);
+
 // ─── Admin Middleware ─────────────────────────────────────────────────────────
 function isAdmin(req, res, next) {
     if (req.headers['admin-key'] !== process.env.ADMIN_KEY) {
@@ -493,12 +605,201 @@ app.get("/verify-user/:phone", (req, res) => {
 });
 
 // ─── ORDERS ───────────────────────────────────────────────────────────────────
+// ─── RAZORPAY: Create an order (called before opening checkout) ──────────────────
+app.post('/create-razorpay-order', async (req, res) => {
+    try {
+        const { amount } = req.body;
+        if (!amount || isNaN(amount) || amount <= 0)
+            return res.status(400).json({ success: false, message: 'Invalid amount.' });
+
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(amount * 100), // paise
+            currency: 'INR',
+            receipt: 'rcpt_' + Date.now()
+        });
+
+        console.log('🟢 Razorpay order created:', razorpayOrder.id, 'amount:', razorpayOrder.amount);
+        res.json({ success: true, order: razorpayOrder, key: process.env.RAZORPAY_KEY_ID });
+    } catch (err) {
+        console.error('❌ Razorpay order creation failed:', err.message);
+        res.status(500).json({ success: false, message: 'Could not initiate payment. Please try again.' });
+    }
+});
+
+// ─── RAZORPAY: Verify payment signature after checkout success ──────────────────
+app.post('/verify-payment', (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+        return res.status(400).json({ success: false, message: 'Missing payment details.' });
+
+    const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(razorpay_order_id + '|' + razorpay_payment_id)
+        .digest('hex');
+
+    console.log('🔍 Verifying payment:', razorpay_payment_id, 'match:', expectedSignature === razorpay_signature);
+    if (expectedSignature === razorpay_signature) {
+        res.json({ success: true, message: 'Payment verified.' });
+    } else {
+        res.status(400).json({ success: false, message: 'Payment verification failed.' });
+    }
+});
+
+// ─── COUPONS ──────────────────────────────────────────────────────────────────
+// Public: list currently-active, non-expired coupons (for the checkout voucher panel)
+app.get('/coupons/active', async (req, res) => {
+    try {
+        const now = new Date();
+        const coupons = await Coupon.find({
+            isActive: true,
+            $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+        }).select('code type value maxDiscount minOrderValue freeDelivery').lean();
+        res.json({ success: true, coupons });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Validate a coupon code against a live cart subtotal (used at checkout, before placing the order)
+app.post('/validate-coupon', async (req, res) => {
+    const { code, phone, subtotal } = req.body;
+    try {
+        const result = await evaluateCoupon(code, phone, Number(subtotal) || 0);
+        res.json({ success: result.valid, ...result });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+app.get('/admin/coupons', isAdmin, (req, res) => {
+    Coupon.find().sort({ createdAt: -1 })
+        .then(coupons => res.json({ success: true, coupons }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.post('/admin/coupon', isAdmin, (req, res) => {
+    const { code, type, value, maxDiscount, minOrderValue, usageLimit, perUserLimit, freeDelivery, expiresAt } = req.body;
+    if (!code || !type || value === undefined)
+        return res.status(400).json({ success: false, message: 'code, type and value are required.' });
+    new Coupon({ code, type, value, maxDiscount, minOrderValue, usageLimit, perUserLimit, freeDelivery, expiresAt }).save()
+        .then(c => res.status(201).json({ success: true, message: 'Coupon created!', coupon: c }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.put('/admin/coupon/:id/toggle', isAdmin, (req, res) => {
+    Coupon.findById(req.params.id)
+        .then(c => {
+            if (!c) return res.status(404).json({ success: false, message: 'Not found.' });
+            c.isActive = !c.isActive;
+            return c.save();
+        })
+        .then(updated => res.json({ success: true, coupon: updated }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.delete('/admin/coupon/:id', isAdmin, (req, res) => {
+    Coupon.findByIdAndDelete(req.params.id)
+        .then(() => res.json({ success: true, message: 'Coupon deleted.' }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+// ─── SUBSCRIPTIONS (Scheduled / Recurring Orders) ─────────────────────────────
+app.post('/subscriptions', (req, res) => {
+    const { phone, name, items, address, slot, frequency, startDate } = req.body;
+    if (!phone || !name || !items || !items.length || !address)
+        return res.status(400).json({ success: false, message: 'Missing subscription details.' });
+    const nextDeliveryDate = startDate ? new Date(startDate) : new Date();
+    new Subscription({ phone, name, items, address, slot, frequency, nextDeliveryDate }).save()
+        .then(sub => res.status(201).json({ success: true, message: 'Subscription created!', subscription: sub }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.get('/admin/subscriptions', isAdmin, (req, res) => {
+    Subscription.find().sort({ createdAt: -1 })
+        .then(subscriptions => res.json({ success: true, subscriptions }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.get('/subscriptions/:phone', (req, res) => {
+    Subscription.find({ phone: req.params.phone }).sort({ createdAt: -1 })
+        .then(subs => res.json({ success: true, subscriptions: subs }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.put('/subscriptions/:id/pause', (req, res) => {
+    Subscription.findByIdAndUpdate(req.params.id, { isPaused: true }, { new: true })
+        .then(sub => res.json({ success: true, message: 'Subscription paused.', subscription: sub }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.put('/subscriptions/:id/resume', (req, res) => {
+    Subscription.findById(req.params.id)
+        .then(sub => {
+            if (!sub) return res.status(404).json({ success: false, message: 'Not found.' });
+            sub.isPaused = false;
+            // If the next delivery date has already passed while paused, push it to now
+            if (new Date(sub.nextDeliveryDate) < new Date()) sub.nextDeliveryDate = new Date();
+            return sub.save();
+        })
+        .then(sub => res.json({ success: true, message: 'Subscription resumed.', subscription: sub }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+app.delete('/subscriptions/:id', (req, res) => {
+    Subscription.findByIdAndDelete(req.params.id)
+        .then(() => res.json({ success: true, message: 'Subscription cancelled.' }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
+// ─── BEST SELLERS ──────────────────────────────────────────────────────────────
+// Aggregates quantities sold per product name across all orders (excluding cancelled)
+app.get('/products/bestsellers', async (req, res) => {
+    try {
+        const orders = await Order.find({ status: { $ne: 'Cancelled' } }).select('items').lean();
+        const tally = {};
+        orders.forEach(o => (o.items || []).forEach(it => {
+            if (!it || !it.name) return;
+            const qty = Number(it.qty || it.quantity || 1);
+            if (!tally[it.name]) tally[it.name] = { name: it.name, price: it.price, img: it.img, sold: 0 };
+            tally[it.name].sold += qty;
+        }));
+        const bestsellers = Object.values(tally).sort((a, b) => b.sold - a.sold).slice(0, 10);
+        res.json({ success: true, bestsellers });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ─── FEATURED REVIEWS (for homepage testimonials) ─────────────────────────────
+app.get('/reviews/featured', (req, res) => {
+    Review.find({ rating: { $gte: 4 } }).sort({ createdAt: -1 }).limit(10)
+        .then(reviews => res.json({ success: true, reviews }))
+        .catch(err => res.status(500).json({ success: false, message: err.message }));
+});
+
 app.post('/place-order', (req, res) => {
-    const { name, phone, items, totalAmount, address, slot, date } = req.body;
+    console.log('📥 place-order received paymentMethod:', req.body.paymentMethod, '| razorpayPaymentId:', req.body.razorpayPaymentId);
+    const {
+        name, phone, items, totalAmount, address, slot, date,
+        paymentMethod, razorpayOrderId, razorpayPaymentId,
+        couponCode
+    } = req.body;
     if (!name || !phone || !items || items.length === 0)
         return res.status(400).json({ success: false, message: 'Order details incomplete.' });
-    new Order({ name, phone, items, totalAmount, address, slot, date }).save()
+
+    // Online orders must carry a verified payment id before we accept them
+    if (paymentMethod === 'Online' && !razorpayPaymentId)
+        return res.status(400).json({ success: false, message: 'Payment not confirmed.' });
+
+    new Order({
+        name, phone, items, totalAmount, address, slot, date,
+        paymentMethod: paymentMethod === 'Online' ? 'Online' : 'COD',
+        paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
+        razorpayOrderId, razorpayPaymentId,
+        couponCode: couponCode || null
+    }).save()
     .then(saved => {
+        if (couponCode) recordCouponUsage(couponCode, phone).catch(e => console.error('Coupon usage error:', e.message));
         // Strip currency symbol and parse
         const amountPaid = parseFloat(String(totalAmount || '0').replace(/[^0-9.]/g, '')) || 0;
         console.log(`📦 Order saved. Amount: ${amountPaid}. Crediting loyalty to ${phone}`);
